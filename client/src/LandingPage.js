@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
 import { parseCSV, processCSVData } from './csvProcessor';
 import DatePicker from 'react-datepicker';
@@ -10,6 +11,7 @@ function LandingPage() {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleDrop = (event) => {
     event.preventDefault();
@@ -49,7 +51,8 @@ function LandingPage() {
   const handleProcessStart = () => {
     if (csvData.length > 0) {
       console.log('Processing started with data:', csvData);
-      // TODO: Implement processing logic here
+      // Simulate processing and redirect to dashboard
+      navigate('/dashboard');
     } else {
       alert('No CSV data to process.');
     }
