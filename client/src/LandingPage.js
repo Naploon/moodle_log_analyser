@@ -1,8 +1,14 @@
 import React, { useState, useRef } from 'react';
 import './LandingPage.css';
+import { parseCSV, processCSVData } from './csvProcessor';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 function LandingPage() {
   const [file, setFile] = useState(null);
+  const [csvData, setCsvData] = useState([]);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleDrop = (event) => {
@@ -10,7 +16,10 @@ function LandingPage() {
     const droppedFile = event.dataTransfer.files[0];
     if (droppedFile && droppedFile.type === 'text/csv') {
       setFile(droppedFile);
-      console.log('File dropped:', droppedFile);
+      parseCSV(droppedFile, (data) => {
+        const processedData = processCSVData(data);
+        setCsvData(processedData);
+      });
     } else {
       alert('Please drop a valid CSV file.');
     }
@@ -24,7 +33,10 @@ function LandingPage() {
     const selectedFile = event.target.files[0];
     if (selectedFile && selectedFile.type === 'text/csv') {
       setFile(selectedFile);
-      console.log('File selected:', selectedFile);
+      parseCSV(selectedFile, (data) => {
+        const processedData = processCSVData(data);
+        setCsvData(processedData);
+      });
     } else {
       alert('Please select a valid CSV file.');
     }
@@ -35,14 +47,19 @@ function LandingPage() {
   };
 
   const handleProcessStart = () => {
-    alert('Processing started!'); // Placeholder action
+    if (csvData.length > 0) {
+      console.log('Processing started with data:', csvData);
+      // TODO: Implement processing logic here
+    } else {
+      alert('No CSV data to process.');
+    }
   };
 
   return (
     <div className="landing-page">
-      <h1 className="title">Moodle Logfile Analyzer</h1>
+      <h1 className="title">Moodle'i logifailide analüsaator</h1>
       <p className="description">
-        This application allows you to analyze Moodle log files. Drag and drop your CSV file below or click to select a file.
+        See rakendus võimaldab teil analüüsida Moodle'i logifaile.
       </p>
       <div
         className="drop-zone"
@@ -50,7 +67,26 @@ function LandingPage() {
         onDragOver={handleDragOver}
         onClick={handleDropZoneClick}
       >
-        {file ? <p>File: {file.name}</p> : <p>Drag and drop your CSV file here or click to select</p>}
+        {file ? <p>File: {file.name}</p> : <p>Lohistage soovitud CSV fail siia või klõpsake siia, et valida fail</p>}
+      </div>
+      <div className="date-picker">
+        <DatePicker
+          selected={startDate}
+          onChange={(date) => setStartDate(date)}
+          selectsStart
+          startDate={startDate}
+          endDate={endDate}
+          placeholderText="Alguskuupäev"
+        />
+        <DatePicker
+          selected={endDate}
+          onChange={(date) => setEndDate(date)}
+          selectsEnd
+          startDate={startDate}
+          endDate={endDate}
+          minDate={startDate}
+          placeholderText="Lõppkuupäev"
+        />
       </div>
       <input
         type="file"
@@ -59,7 +95,7 @@ function LandingPage() {
         ref={fileInputRef}
         style={{ display: 'none' }}
       />
-      <button onClick={handleProcessStart}>Start Processing</button>
+      <button onClick={handleProcessStart}>Alusta analüüsiga</button>
     </div>
   );
 }

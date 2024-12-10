@@ -31,7 +31,7 @@ body {
   padding: 40px;
   width: 80%;
   max-width: 600px;
-  margin: 0 auto 40px;
+  margin: 0 auto 20px;
   cursor: pointer;
   transition: background-color 0.3s;
   background-color: #108AB1;
@@ -42,9 +42,30 @@ body {
   background-color: #06d7a0;
 }
 
-input[type="file"] {
-  display: block;
-  margin: 20px auto;
+.date-picker {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.react-datepicker-wrapper,
+.react-datepicker__input-container {
+  width: auto;
+}
+
+.react-datepicker__input-container input {
+  width: 150px;
+  padding: 8px;
+  border: 1px solid #ffd167;
+  border-radius: 5px;
+  background-color: #073a4b;
+  color: #f8f8f8;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+}
+
+.react-datepicker__input-container input::placeholder {
   color: #f8f8f8;
 }
 
