@@ -1,11 +1,12 @@
 import React from 'react';
-import { Link, Routes, Route } from 'react-router-dom';
-import UserView from './views/UserView';
-import EventAnalysisView from './views/EventAnalysisView';
-import MaterialAnalysisView from './views/MaterialAnalysisView';
+import { Link, useLocation } from 'react-router-dom';
 import './Dashboard.css';
 
 function Dashboard() {
+  const location = useLocation();
+  const distinctUserCount = location.state?.distinctUserCount || 0;
+  const distinctContextCounts = location.state?.distinctContextCounts || {};
+
   return (
     <div className="dashboard">
       <nav className="sidebar">
@@ -17,12 +18,19 @@ function Dashboard() {
         </ul>
       </nav>
       <div className="main-content">
-        <Routes>
-          <Route path="/" element={<h1>Dashboard Overview</h1>} />
-          <Route path="user-view" element={<UserView />} />
-          <Route path="event-analysis" element={<EventAnalysisView />} />
-          <Route path="material-analysis" element={<MaterialAnalysisView />} />
-        </Routes>
+        <h1 className="dashboard-title">Data Dashboard</h1>
+        <div className="metrics-container">
+          <div className="metric-box">
+            <div className="metric-label">Distinct User Count</div>
+            <div className="metric-number">{distinctUserCount}</div>
+          </div>
+          {Object.entries(distinctContextCounts).map(([component, count]) => (
+            <div key={component} className="metric-box">
+              <div className="metric-label">Distinct Context Count ({component})</div>
+              <div className="metric-number">{count}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

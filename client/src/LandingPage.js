@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
-import { parseCSV, processCSVData } from './csvProcessor';
+import { parseCSV, processCSVData, calculateMetrics } from './processors/csvProcessor';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -49,12 +49,22 @@ function LandingPage() {
   };
 
   const handleProcessStart = () => {
-    if (csvData.length > 0) {
-      console.log('Processing started with data:', csvData);
-      // Simulate processing and redirect to dashboard
-      navigate('/dashboard');
+    if (file) {
+      parseCSV(file, 
+        (data) => {
+          const processedData = processCSVData(data);
+          const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
+          console.log('Processed data:', processedData);
+          console.log('Distinct user count:', distinctUserCount);
+          console.log('Distinct context counts:', distinctContextCounts);
+          navigate('/dashboard', { state: { processedData, distinctUserCount, distinctContextCounts } });
+        },
+        (error) => {
+          alert(error);
+        }
+      );
     } else {
-      alert('No CSV data to process.');
+      alert('No CSV file selected.');
     }
   };
 
@@ -98,7 +108,7 @@ function LandingPage() {
         ref={fileInputRef}
         style={{ display: 'none' }}
       />
-      <button onClick={handleProcessStart}>Alusta analüüsiga</button>
+      <button onClick={handleProcessStart}>Process CSV</button>
     </div>
   );
 }
