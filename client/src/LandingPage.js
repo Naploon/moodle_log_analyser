@@ -4,6 +4,7 @@ import './LandingPage.css';
 import { parseCSV, processCSVData, calculateMetrics } from './processors/csvProcessor';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useCsv } from './context/CsvContext';
 
 function LandingPage() {
   const [file, setFile] = useState(null);
@@ -12,6 +13,7 @@ function LandingPage() {
   const [endDate, setEndDate] = useState(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const { setIsCsvUploaded } = useCsv();
 
   const handleDrop = (event) => {
     event.preventDefault();
@@ -21,6 +23,7 @@ function LandingPage() {
       parseCSV(droppedFile, (data) => {
         const processedData = processCSVData(data);
         setCsvData(processedData);
+        setIsCsvUploaded(true);
       });
     } else {
       alert('Please drop a valid CSV file.');
@@ -38,6 +41,7 @@ function LandingPage() {
       parseCSV(selectedFile, (data) => {
         const processedData = processCSVData(data);
         setCsvData(processedData);
+        setIsCsvUploaded(true);
       });
     } else {
       alert('Please select a valid CSV file.');

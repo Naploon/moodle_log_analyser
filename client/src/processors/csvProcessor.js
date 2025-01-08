@@ -1,9 +1,13 @@
 import Papa from 'papaparse';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 // Function to parse CSV file and execute a callback when done
 export function parseCSV(file, onComplete, onError) {
   Papa.parse(file, {
-    header: true, // CSV has headers
+    header: true,
     complete: (results) => {
       const requiredHeaders = [
         "Aeg", "Kasutaja täisnimi", "Sündmuse kontekst", 
@@ -29,12 +33,46 @@ export function parseCSV(file, onComplete, onError) {
 
 // Function to process parsed data
 export function processCSVData(data) {
-  console.log('Processing CSV data:', data);
-  // Example: Add a new field to each row
-  return data.map(row => ({
-    ...row,
-    processed: true,
-  }));
+  const eventCounts = {};
+  let validCount = 0;
+  let invalidCount = 0;
+
+  data.forEach(row => {
+    let timestamp = row['Aeg']; // Assuming 'Aeg' is the timestamp column
+
+    // Trim whitespace
+    if (timestamp) {
+      timestamp = timestamp.trim();
+    }
+
+    // Check for null or empty values
+    if (!timestamp) {
+      invalidCount++;
+      return;
+    }
+
+    // Try parsing with both formats
+    let date = dayjs(timestamp, 'D/M/YY, HH:mm:ss'); // Adjust format to handle single-digit day/month
+    if (!date.isValid()) {
+      date = dayjs(timestamp, 'YYYY-MM-DD HH:mm:ss');
+    }
+
+    if (date.isValid()) {
+      validCount++;
+      const hour = date.format('HH:00'); // Group by hour
+      if (!eventCounts[hour]) {
+        eventCounts[hour] = 0;
+      }
+      eventCounts[hour]++;
+    } else {
+      invalidCount++;
+    }
+  });
+
+  console.log(`Valid timestamps: ${validCount}`);
+  console.log(`Invalid timestamps: ${invalidCount}`);
+
+  return eventCounts;
 }
 
 // Function to count distinct users

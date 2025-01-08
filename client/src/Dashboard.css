@@ -1,6 +1,8 @@
 .dashboard {
   display: flex;
   height: 100vh;
+  overflow: hidden;
+  background-color: #f0f0f0;
 }
 
 .sidebar {
@@ -8,6 +10,9 @@
   background-color: #073a4b;
   color: #f8f8f8;
   padding: 20px;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .sidebar ul {
@@ -30,10 +35,13 @@
 }
 
 .main-content {
-  flex-grow: 1;
+  margin-left: 200px;
   padding: 20px;
-  background-color: #f8f8f8;
+  background-color: #f0f0f0;
   color: #073a4b;
+  flex-grow: 1;
+  overflow-y: auto;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -51,14 +59,18 @@
   gap: 20px;
 }
 
-.metric-box {
-  border: 2px solid #073a4b;
+.unified-box {
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+}
+
+.metric-box {
   width: 250px;
   text-align: center;
-  margin-top: 20px;
-  background-color: #fff;
 }
 
 .metric-label {
@@ -73,4 +85,25 @@
   font-weight: bold;
   color: #073a4b;
   margin-top: 10px;
+}
+
+.toggle-button {
+  background-color: #f04770;
+  color: #f8f8f8;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-bottom: 20px;
+}
+
+.toggle-button:hover {
+  background-color: #f78c6a;
+}
+
+.chart-container {
+  width: calc(100% - 40px);
+  height: 600px;
 }
