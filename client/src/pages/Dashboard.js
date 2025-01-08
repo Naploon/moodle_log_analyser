@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import './Dashboard.css';
-import { useCsv } from './context/CsvContext';
+import { useCsv } from '../context/CsvContext';
+import { useCsvData } from '../context/CsvDataContext';
+import Navbar from '../components/Navbar';
 
 // Register the necessary components
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 function Dashboard() {
-  const location = useLocation();
   const navigate = useNavigate();
   const { isCsvUploaded } = useCsv();
-  const distinctUserCount = location.state?.distinctUserCount || 0;
-  const distinctContextCounts = location.state?.distinctContextCounts || {};
-  const processedData = location.state?.processedData || {};
+  const { csvData } = useCsvData();
 
   useEffect(() => {
     if (!isCsvUploaded) {
@@ -25,9 +24,9 @@ function Dashboard() {
   const [chartData, setChartData] = useState({});
 
   useEffect(() => {
-    if (processedData && Object.keys(processedData).length > 0) {
-      const labels = Object.keys(processedData).sort(); // Sort hours for proper order
-      const data = labels.map(label => processedData[label]);
+    if (csvData.processedData && Object.keys(csvData.processedData).length > 0) {
+      const labels = Object.keys(csvData.processedData).sort(); // Sort hours for proper order
+      const data = labels.map(label => csvData.processedData[label]);
 
       setChartData({
         labels,
@@ -42,26 +41,19 @@ function Dashboard() {
         ],
       });
     }
-  }, [processedData]);
+  }, [csvData.processedData]);
 
   return (
     <div className="dashboard">
-      <nav className="sidebar">
-        <ul>
-          <li><Link to="/dashboard">Dashboard Overview</Link></li>
-          <li><Link to="/dashboard/user-view">User View</Link></li>
-          <li><Link to="/dashboard/event-analysis">Event Analysis</Link></li>
-          <li><Link to="/dashboard/material-analysis">Material Analysis</Link></li>
-        </ul>
-      </nav>
+      <Navbar />
       <div className="main-content">
         <h1 className="dashboard-title">Data Dashboard</h1>
         <div className="metrics-container">
           <div className="metric-box unified-box">
             <div className="metric-label">Distinct User Count</div>
-            <div className="metric-number">{distinctUserCount}</div>
+            <div className="metric-number">{csvData.distinctUserCount}</div>
           </div>
-          {Object.entries(distinctContextCounts).map(([component, count]) => (
+          {Object.entries(csvData.distinctContextCounts).map(([component, count]) => (
             <div key={component} className="metric-box unified-box">
               <div className="metric-label">Distinct Context Count ({component})</div>
               <div className="metric-number">{count}</div>

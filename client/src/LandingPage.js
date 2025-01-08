@@ -5,15 +5,16 @@ import { parseCSV, processCSVData, calculateMetrics } from './processors/csvProc
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useCsv } from './context/CsvContext';
+import { useCsvData } from './context/CsvDataContext';
 
 function LandingPage() {
   const [file, setFile] = useState(null);
-  const [csvData, setCsvData] = useState([]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const { setIsCsvUploaded } = useCsv();
+  const { setCsvData } = useCsvData();
 
   const handleDrop = (event) => {
     event.preventDefault();
@@ -22,7 +23,7 @@ function LandingPage() {
       setFile(droppedFile);
       parseCSV(droppedFile, (data) => {
         const processedData = processCSVData(data);
-        setCsvData(processedData);
+        setCsvData({ processedData, distinctUserCount: 0, distinctContextCounts: {} });
         setIsCsvUploaded(true);
       });
     } else {
@@ -40,7 +41,8 @@ function LandingPage() {
       setFile(selectedFile);
       parseCSV(selectedFile, (data) => {
         const processedData = processCSVData(data);
-        setCsvData(processedData);
+        const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
+        setCsvData({ processedData, distinctUserCount, distinctContextCounts });
         setIsCsvUploaded(true);
       });
     } else {
@@ -58,10 +60,8 @@ function LandingPage() {
         (data) => {
           const processedData = processCSVData(data);
           const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
-          console.log('Processed data:', processedData);
-          console.log('Distinct user count:', distinctUserCount);
-          console.log('Distinct context counts:', distinctContextCounts);
-          navigate('/dashboard', { state: { processedData, distinctUserCount, distinctContextCounts } });
+          setCsvData({ processedData, distinctUserCount, distinctContextCounts });
+          navigate('/dashboard');
         },
         (error) => {
           alert(error);
