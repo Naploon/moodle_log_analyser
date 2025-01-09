@@ -23,7 +23,8 @@ function LandingPage() {
       setFile(droppedFile);
       parseCSV(droppedFile, (data) => {
         const processedData = processCSVData(data);
-        setCsvData({ processedData, distinctUserCount: 0, distinctContextCounts: {} });
+        const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
+        setCsvData({ originalData: data, processedData, distinctUserCount, distinctContextCounts });
         setIsCsvUploaded(true);
       });
     } else {
@@ -42,16 +43,12 @@ function LandingPage() {
       parseCSV(selectedFile, (data) => {
         const processedData = processCSVData(data);
         const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
-        setCsvData({ processedData, distinctUserCount, distinctContextCounts });
+        setCsvData({ originalData: data, processedData, distinctUserCount, distinctContextCounts });
         setIsCsvUploaded(true);
       });
     } else {
       alert('Please select a valid CSV file.');
     }
-  };
-
-  const handleDropZoneClick = () => {
-    fileInputRef.current.click();
   };
 
   const handleProcessStart = () => {
@@ -60,7 +57,7 @@ function LandingPage() {
         (data) => {
           const processedData = processCSVData(data);
           const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
-          setCsvData({ processedData, distinctUserCount, distinctContextCounts });
+          setCsvData({ originalData: data, processedData, distinctUserCount, distinctContextCounts });
           navigate('/dashboard');
         },
         (error) => {
@@ -82,10 +79,17 @@ function LandingPage() {
         className="drop-zone"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
-        onClick={handleDropZoneClick}
+        onClick={() => fileInputRef.current.click()}
       >
         {file ? <p>File: {file.name}</p> : <p>Lohistage soovitud CSV fail siia või klõpsake siia, et valida fail</p>}
       </div>
+      <input
+        type="file"
+        accept=".csv"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
       <div className="date-picker">
         <DatePicker
           selected={startDate}
@@ -101,18 +105,10 @@ function LandingPage() {
           selectsEnd
           startDate={startDate}
           endDate={endDate}
-          minDate={startDate}
           placeholderText="Lõppkuupäev"
         />
       </div>
-      <input
-        type="file"
-        accept=".csv"
-        onChange={handleFileChange}
-        ref={fileInputRef}
-        style={{ display: 'none' }}
-      />
-      <button onClick={handleProcessStart}>Process CSV</button>
+      <button onClick={handleProcessStart}>Start Processing</button>
     </div>
   );
 }
