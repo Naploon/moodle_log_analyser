@@ -187,31 +187,39 @@ function UserPage() {
       ],
     });
 
-    // Calculate "sündmuse kontekst" entries for "komponent" "Ülesanne"
-    const contextCounts = {};
-    userData.forEach(entry => {
-      if (entry['Komponent'] === 'Ülesanne') {
-        const context = entry['Sündmuse kontekst'];
-        if (!contextCounts[context]) {
-          contextCounts[context] = 0;
+    // Function to create context bar data for a given component
+    const createContextBarData = (componentName) => {
+      const contextCounts = {};
+      userData.forEach(entry => {
+        if (entry['Komponent'] === componentName) {
+          const context = entry['Sündmuse kontekst'];
+          if (!contextCounts[context]) {
+            contextCounts[context] = 0;
+          }
+          contextCounts[context]++;
         }
-        contextCounts[context]++;
-      }
-    });
+      });
 
-    const contextLabels = Object.keys(contextCounts);
-    const contextData = contextLabels.map(label => contextCounts[label]);
+      const contextLabels = Object.keys(contextCounts);
+      const contextData = contextLabels.map(label => contextCounts[label]);
 
-    setContextBarData({
-      labels: contextLabels,
-      datasets: [
-        {
-          label: 'Sündmuse Kontekst for Ülesanne',
-          data: contextData,
-          backgroundColor: '#f78c6a',
-        },
-      ],
-    });
+      return {
+        labels: contextLabels,
+        datasets: [
+          {
+            label: `Sündmuse Kontekst for ${componentName}`,
+            data: contextData,
+            backgroundColor: '#f78c6a',
+          },
+        ],
+      };
+    };
+
+    // Generate context bar data for each unique "Komponent"
+    const uniqueComponents = [...new Set(userData.map(entry => entry['Komponent']))];
+    const allContextBarData = uniqueComponents.map(createContextBarData);
+
+    setContextBarData(allContextBarData);
   };
 
   const handleBlur = () => {
@@ -291,12 +299,16 @@ function UserPage() {
                 <Pie data={componentDistributionData} />
               </div>
             )}
-            {contextBarData.labels && contextBarData.labels.length > 0 && (
-              <div className="chart-container unified-box">
-                <h2 className="chart-title">Sündmuse Kontekst for Ülesanne</h2>
-                <Bar data={contextBarData} />
-              </div>
-            )}
+            <div className="chart-row">
+              {Array.isArray(contextBarData) && contextBarData.map((data, index) => (
+                data.labels && data.labels.length > 0 && (
+                  <div key={index} className="chart-container unified-box">
+                    <h2 className="chart-title">{data.datasets[0].label}</h2>
+                    <Bar data={data} />
+                  </div>
+                )
+              ))}
+            </div>
           </>
         )}
       </div>
