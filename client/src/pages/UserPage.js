@@ -29,6 +29,7 @@ function UserPage() {
   const [componentDistributionData, setComponentDistributionData] = useState({});
   const [userDayOfWeekData, setUserDayOfWeekData] = useState({});
   const [userTimeframeData, setUserTimeframeData] = useState({});
+  const [contextBarData, setContextBarData] = useState([]);
 
   useEffect(() => {
     if (!isCsvUploaded) {
@@ -185,6 +186,32 @@ function UserPage() {
         },
       ],
     });
+
+    // Calculate "sündmuse kontekst" entries for "komponent" "Ülesanne"
+    const contextCounts = {};
+    userData.forEach(entry => {
+      if (entry['Komponent'] === 'Ülesanne') {
+        const context = entry['Sündmuse kontekst'];
+        if (!contextCounts[context]) {
+          contextCounts[context] = 0;
+        }
+        contextCounts[context]++;
+      }
+    });
+
+    const contextLabels = Object.keys(contextCounts);
+    const contextData = contextLabels.map(label => contextCounts[label]);
+
+    setContextBarData({
+      labels: contextLabels,
+      datasets: [
+        {
+          label: 'Sündmuse Kontekst for Ülesanne',
+          data: contextData,
+          backgroundColor: '#f78c6a',
+        },
+      ],
+    });
   };
 
   const handleBlur = () => {
@@ -262,6 +289,12 @@ function UserPage() {
               <div className="chart-container unified-box">
                 <h2 className="chart-title">Component Distribution</h2>
                 <Pie data={componentDistributionData} />
+              </div>
+            )}
+            {contextBarData.labels && contextBarData.labels.length > 0 && (
+              <div className="chart-container unified-box">
+                <h2 className="chart-title">Sündmuse Kontekst for Ülesanne</h2>
+                <Bar data={contextBarData} />
               </div>
             )}
           </>
