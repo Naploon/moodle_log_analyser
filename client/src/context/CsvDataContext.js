@@ -11,8 +11,13 @@ export const CsvDataProvider = ({ children }) => {
     distinctContextCounts: {},
   });
 
+  const [timeframe, setTimeframe] = useState({
+    startDate: null,
+    endDate: null,
+  });
+
   return (
-    <CsvDataContext.Provider value={{ csvData, setCsvData }}>
+    <CsvDataContext.Provider value={{ csvData, setCsvData, timeframe, setTimeframe }}>
       {children}
     </CsvDataContext.Provider>
   );

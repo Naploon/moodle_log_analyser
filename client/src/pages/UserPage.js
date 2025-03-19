@@ -5,14 +5,14 @@ import { useCsv } from '../context/CsvContext';
 import Navbar from '../components/Navbar';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
-import { Line, Pie } from 'react-chartjs-2';
-import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { Line, Pie, Bar } from 'react-chartjs-2';
+import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement } from 'chart.js';
 import './UserPage.css';
 
 dayjs.extend(customParseFormat);
 
 // Register the necessary components
-Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement);
+Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement);
 
 function UserPage() {
   const navigate = useNavigate();
@@ -27,6 +27,8 @@ function UserPage() {
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [userChartData, setUserChartData] = useState({});
   const [componentDistributionData, setComponentDistributionData] = useState({});
+  const [userDayOfWeekData, setUserDayOfWeekData] = useState({});
+  const [userTimeframeData, setUserTimeframeData] = useState({});
 
   useEffect(() => {
     if (!isCsvUploaded) {
@@ -129,6 +131,60 @@ function UserPage() {
         },
       ],
     });
+
+    // Filter data for the selected user
+    const userData = csvData.originalData.filter(row => row['Kasutaja täisnimi'] === user);
+
+    // Calculate activity by day of the week for the user
+    const dayOfWeekCounts = Array(7).fill(0); // Initialize array for each day of the week
+
+    userData.forEach(row => {
+      const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
+      if (date.isValid()) {
+        const dayOfWeek = date.day(); // Get day of the week (0 = Sunday, 6 = Saturday)
+        dayOfWeekCounts[dayOfWeek]++;
+      }
+    });
+
+    setUserDayOfWeekData({
+      labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      datasets: [
+        {
+          label: `Activity for ${user}`,
+          data: dayOfWeekCounts,
+          backgroundColor: '#4caf50',
+        },
+      ],
+    });
+
+    // Calculate activity over time (day interval)
+    const timeframeCounts = {};
+    userData.forEach(row => {
+      const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
+      if (date.isValid()) {
+        const dateString = date.format('YYYY-MM-DD');
+        if (!timeframeCounts[dateString]) {
+          timeframeCounts[dateString] = 0;
+        }
+        timeframeCounts[dateString]++;
+      }
+    });
+
+    const timeframeLabels = Object.keys(timeframeCounts).sort();
+    const timeframeDataPoints = timeframeLabels.map(label => timeframeCounts[label]);
+
+    setUserTimeframeData({
+      labels: timeframeLabels,
+      datasets: [
+        {
+          label: 'User Activity Over Time',
+          data: timeframeDataPoints,
+          fill: false,
+          backgroundColor: '#3e95cd',
+          borderColor: '#3e95cd',
+        },
+      ],
+    });
   };
 
   const handleBlur = () => {
@@ -182,10 +238,24 @@ function UserPage() {
                 <div className="metric-number">{lastActivityTimestamp}</div>
               </div>
             </div>
-            {userChartData.labels && userChartData.labels.length > 0 && (
+            <div className="chart-row">
+              {userChartData.labels && userChartData.labels.length > 0 && (
+                <div className="chart-container unified-box">
+                  <h2 className="chart-title">Activity Over Time of Day</h2>
+                  <Line data={userChartData} />
+                </div>
+              )}
+              {userDayOfWeekData.labels && userDayOfWeekData.labels.length > 0 && (
+                <div className="chart-container unified-box">
+                  <h2 className="chart-title">Activity Over Day of Week</h2>
+                  <Bar data={userDayOfWeekData} />
+                </div>
+              )}
+            </div>
+            {userTimeframeData.labels && userTimeframeData.labels.length > 0 && (
               <div className="chart-container unified-box">
-                <h2 className="chart-title">User Activity Over Time of Day</h2>
-                <Line data={userChartData} />
+                <h2 className="chart-title">Activity Over Time</h2>
+                <Line data={userTimeframeData} />
               </div>
             )}
             {componentDistributionData.labels && componentDistributionData.labels.length > 0 && (

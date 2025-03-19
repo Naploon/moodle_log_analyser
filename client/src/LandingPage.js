@@ -15,7 +15,7 @@ function LandingPage() {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const { setIsCsvUploaded } = useCsv();
-  const { setCsvData } = useCsvData();
+  const { setCsvData, setTimeframe } = useCsvData();
 
   const handleError = (error) => {
     alert(error);
@@ -65,6 +65,7 @@ function LandingPage() {
           const processedData = processCSVData(filteredData);
           const { distinctUserCount, distinctContextCounts } = calculateMetrics(filteredData);
           setCsvData({ originalData: filteredData, processedData, distinctUserCount, distinctContextCounts });
+          setTimeframe({ startDate, endDate });
           navigate('/dashboard');
         },
         handleError

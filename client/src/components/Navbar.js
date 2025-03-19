@@ -1,14 +1,27 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Navbar.css';
+import { useCsvData } from '../context/CsvDataContext';
+import dayjs from 'dayjs';
 
 function Navbar() {
+  const { timeframe } = useCsvData();
   const [includeTeachers, setIncludeTeachers] = useState(false);
 
   const handleCheckboxChange = () => {
     setIncludeTeachers(!includeTeachers);
     // Placeholder for logic to include/exclude teachers
     console.log('Include Teachers:', !includeTeachers);
+  };
+
+  const formatDate = (date) => date ? dayjs(date).format('D/M/YYYY') : '...';
+
+  const displayTimeframe = () => {
+    const { startDate, endDate } = timeframe;
+    if (!startDate && !endDate) {
+      return 'Timeframe: All time';
+    }
+    return `Timeframe: ${formatDate(startDate)} - ${formatDate(endDate)}`;
   };
 
   return (
@@ -19,6 +32,9 @@ function Navbar() {
         <li><Link to="/event-analysis">Event Analysis</Link></li>
         <li><Link to="/material-analysis">Material Analysis</Link></li>
       </ul>
+      <div className="timeframe-display">
+        <p>{displayTimeframe()}</p>
+      </div>
       <div className="checkbox-container">
         <label>
           <input

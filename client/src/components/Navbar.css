@@ -33,8 +33,16 @@
   color: #f78c6a;
 }
 
-.checkbox-container {
+.timeframe-display {
   margin-top: auto;
+  padding: 10px 0;
+  font-size: 0.9rem;
+  color: #f8f8f8;
+  border-top: 1px solid #f8f8f8;
+  text-align: center;
+}
+
+.checkbox-container {
   padding: 10px 0;
   background-color: #073a4b;
 }
