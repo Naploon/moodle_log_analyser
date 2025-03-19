@@ -16,6 +16,10 @@ function LandingPage() {
   const { setIsCsvUploaded } = useCsv();
   const { setCsvData } = useCsvData();
 
+  const handleError = (error) => {
+    alert(error);
+  };
+
   const handleDrop = (event) => {
     event.preventDefault();
     const droppedFile = event.dataTransfer.files[0];
@@ -26,7 +30,7 @@ function LandingPage() {
         const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
         setCsvData({ originalData: data, processedData, distinctUserCount, distinctContextCounts });
         setIsCsvUploaded(true);
-      });
+      }, handleError);
     } else {
       alert('Please drop a valid CSV file.');
     }
@@ -45,7 +49,7 @@ function LandingPage() {
         const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
         setCsvData({ originalData: data, processedData, distinctUserCount, distinctContextCounts });
         setIsCsvUploaded(true);
-      });
+      }, handleError);
     } else {
       alert('Please select a valid CSV file.');
     }

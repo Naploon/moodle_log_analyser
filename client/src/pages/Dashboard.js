@@ -6,6 +6,7 @@ import './Dashboard.css';
 import { useCsv } from '../context/CsvContext';
 import { useCsvData } from '../context/CsvDataContext';
 import Navbar from '../components/Navbar';
+import dayjs from 'dayjs';
 
 // Register the necessary components
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
@@ -22,6 +23,7 @@ function Dashboard() {
   }, [isCsvUploaded, navigate]);
 
   const [chartData, setChartData] = useState({});
+  const [dayOfWeekData, setDayOfWeekData] = useState({});
   const [topUsersData, setTopUsersData] = useState({});
   const [bottomUsersData, setBottomUsersData] = useState({});
 
@@ -39,6 +41,30 @@ function Dashboard() {
             fill: false,
             backgroundColor: '#f04770',
             borderColor: '#f78c6a',
+          },
+        ],
+      });
+    }
+
+    // Calculate activity by day of the week
+    if (csvData.originalData && csvData.originalData.length > 0) {
+      const dayOfWeekCounts = Array(7).fill(0); // Initialize array for each day of the week
+
+      csvData.originalData.forEach(row => {
+        const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
+        if (date.isValid()) {
+          const dayOfWeek = date.day(); // Get day of the week (0 = Sunday, 6 = Saturday)
+          dayOfWeekCounts[dayOfWeek]++;
+        }
+      });
+
+      setDayOfWeekData({
+        labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        datasets: [
+          {
+            label: 'Events per Day of the Week',
+            data: dayOfWeekCounts,
+            backgroundColor: '#4caf50',
           },
         ],
       });
@@ -107,6 +133,12 @@ function Dashboard() {
           <div className="chart-container unified-box">
             <h2 className="chart-title">Activity Over Time of Day</h2>
             <Line data={chartData} />
+          </div>
+        )}
+        {dayOfWeekData.labels && dayOfWeekData.labels.length > 0 && (
+          <div className="chart-container unified-box">
+            <h2 className="chart-title">Activity Over Day of Week</h2>
+            <Bar data={dayOfWeekData} />
           </div>
         )}
         {topUsersData.labels && topUsersData.labels.length > 0 && (
