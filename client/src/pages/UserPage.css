@@ -1,27 +1,4 @@
-.user-page {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-  background-color: #f0f0f0;
-}
-
-.main-content {
-  margin-left: 200px;
-  padding: 20px;
-  background-color: #f0f0f0;
-  color: #073a4b;
-  flex-grow: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.page-title {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
+@import 'SharedStyles.css';
 
 .search-container {
   position: relative;
@@ -76,24 +53,4 @@
 
 .user-info {
   text-align: center;
-}
-
-.unified-box {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 20px;
-  background-color: #fff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin: 20px 0;
-  width: 100%;
-}
-
-.chart-container {
-  width: calc(100% - 40px);
-  max-width: 800px;
-  margin: 20px 0;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

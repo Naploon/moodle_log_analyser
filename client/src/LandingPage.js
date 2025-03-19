@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
-import { parseCSV, processCSVData, calculateMetrics } from './processors/csvProcessor';
+import { parseCSV, processCSVData, calculateMetrics, filterDataByTimeframe } from './processors/csvProcessor';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useCsv } from './context/CsvContext';
 import { useCsvData } from './context/CsvDataContext';
+import dayjs from 'dayjs';
 
 function LandingPage() {
   const [file, setFile] = useState(null);
@@ -45,9 +46,10 @@ function LandingPage() {
     if (selectedFile && selectedFile.type === 'text/csv') {
       setFile(selectedFile);
       parseCSV(selectedFile, (data) => {
-        const processedData = processCSVData(data);
-        const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
-        setCsvData({ originalData: data, processedData, distinctUserCount, distinctContextCounts });
+        const filteredData = filterDataByTimeframe(data, startDate ? dayjs(startDate) : null, endDate ? dayjs(endDate) : null);
+        const processedData = processCSVData(filteredData);
+        const { distinctUserCount, distinctContextCounts } = calculateMetrics(filteredData);
+        setCsvData({ originalData: filteredData, processedData, distinctUserCount, distinctContextCounts });
         setIsCsvUploaded(true);
       }, handleError);
     } else {
@@ -59,14 +61,13 @@ function LandingPage() {
     if (file) {
       parseCSV(file, 
         (data) => {
-          const processedData = processCSVData(data);
-          const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
-          setCsvData({ originalData: data, processedData, distinctUserCount, distinctContextCounts });
+          const filteredData = filterDataByTimeframe(data, startDate ? dayjs(startDate) : null, endDate ? dayjs(endDate) : null);
+          const processedData = processCSVData(filteredData);
+          const { distinctUserCount, distinctContextCounts } = calculateMetrics(filteredData);
+          setCsvData({ originalData: filteredData, processedData, distinctUserCount, distinctContextCounts });
           navigate('/dashboard');
         },
-        (error) => {
-          alert(error);
-        }
+        handleError
       );
     } else {
       alert('No CSV file selected.');

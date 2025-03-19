@@ -16,16 +16,17 @@ function Dashboard() {
   const { isCsvUploaded } = useCsv();
   const { csvData } = useCsvData();
 
+  const [chartData, setChartData] = useState({});
+  const [dayOfWeekData, setDayOfWeekData] = useState({});
+  const [topUsersData, setTopUsersData] = useState({});
+  const [bottomUsersData, setBottomUsersData] = useState({});
+  const [timeframeData, setTimeframeData] = useState({});
+
   useEffect(() => {
     if (!isCsvUploaded) {
       navigate('/'); // Redirect to landing page if no CSV is uploaded
     }
   }, [isCsvUploaded, navigate]);
-
-  const [chartData, setChartData] = useState({});
-  const [dayOfWeekData, setDayOfWeekData] = useState({});
-  const [topUsersData, setTopUsersData] = useState({});
-  const [bottomUsersData, setBottomUsersData] = useState({});
 
   useEffect(() => {
     if (csvData.processedData && Object.keys(csvData.processedData).length > 0) {
@@ -109,6 +110,35 @@ function Dashboard() {
           },
         ],
       });
+
+      // Calculate activity over the entire timeframe by day
+      const timeframeCounts = {};
+      csvData.originalData.forEach(row => {
+        const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
+        if (date.isValid()) {
+          const dateString = date.format('YYYY-MM-DD');
+          if (!timeframeCounts[dateString]) {
+            timeframeCounts[dateString] = 0;
+          }
+          timeframeCounts[dateString]++;
+        }
+      });
+
+      const timeframeLabels = Object.keys(timeframeCounts).sort();
+      const timeframeDataPoints = timeframeLabels.map(label => timeframeCounts[label]);
+
+      setTimeframeData({
+        labels: timeframeLabels,
+        datasets: [
+          {
+            label: 'Events Over Timeframe',
+            data: timeframeDataPoints,
+            fill: false,
+            backgroundColor: '#3e95cd',
+            borderColor: '#3e95cd',
+          },
+        ],
+      });
     }
   }, [csvData.originalData]);
 
@@ -116,7 +146,7 @@ function Dashboard() {
     <div className="dashboard">
       <Navbar />
       <div className="main-content">
-        <h1 className="dashboard-title">Data Dashboard</h1>
+        <h1 className="page-title">Data Dashboard</h1>
         <div className="metrics-container">
           <div className="metric-box unified-box">
             <div className="metric-label">Distinct User Count</div>
@@ -129,16 +159,24 @@ function Dashboard() {
             </div>
           ))}
         </div>
-        {chartData.labels && chartData.labels.length > 0 && (
+        <div className="chart-row">
+          {chartData.labels && chartData.labels.length > 0 && (
+            <div className="chart-container unified-box">
+              <h2 className="chart-title">Activity Over Time of Day</h2>
+              <Line data={chartData} />
+            </div>
+          )}
+          {dayOfWeekData.labels && dayOfWeekData.labels.length > 0 && (
+            <div className="chart-container unified-box">
+              <h2 className="chart-title">Activity Over Day of Week</h2>
+              <Bar data={dayOfWeekData} />
+            </div>
+          )}
+        </div>
+        {timeframeData.labels && timeframeData.labels.length > 0 && (
           <div className="chart-container unified-box">
-            <h2 className="chart-title">Activity Over Time of Day</h2>
-            <Line data={chartData} />
-          </div>
-        )}
-        {dayOfWeekData.labels && dayOfWeekData.labels.length > 0 && (
-          <div className="chart-container unified-box">
-            <h2 className="chart-title">Activity Over Day of Week</h2>
-            <Bar data={dayOfWeekData} />
+            <h2 className="chart-title">Activity Over Timeframe</h2>
+            <Line data={timeframeData} />
           </div>
         )}
         {topUsersData.labels && topUsersData.labels.length > 0 && (

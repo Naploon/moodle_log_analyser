@@ -104,3 +104,17 @@ export function calculateMetrics(data) {
   };
   return { distinctUserCount, distinctContextCounts };
 }
+
+export function filterDataByTimeframe(data, startTime, endTime) {
+  return data.filter(row => {
+    const timestamp = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
+    if (!timestamp.isValid()) {
+      return false;
+    }
+    
+    const isAfterStart = startTime ? timestamp.isAfter(startTime) : true;
+    const isBeforeEnd = endTime ? timestamp.isBefore(endTime) : true;
+    
+    return isAfterStart && isBeforeEnd;
+  });
+}
