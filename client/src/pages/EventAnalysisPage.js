@@ -1,10 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import { useCsvData } from '../context/CsvDataContext';
 import { Line } from 'react-chartjs-2';
 import dayjs from 'dayjs';
 import './SharedStyles.css';
 import './UserPage.css'; // Import styles for the search bar
+import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+
+// Register Chart.js and white-background plugin
+Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+Chart.register({
+  id: 'whiteBackground',
+  beforeDraw: chart => {
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, chart.width, chart.height);
+    ctx.restore();
+  }
+});
 
 function EventAnalysisPage() {
   const { csvData } = useCsvData();
@@ -14,6 +28,15 @@ function EventAnalysisPage() {
   const [selectedEvent, setSelectedEvent] = useState('');
   const [eventLogCount, setEventLogCount] = useState(0);
   const [eventTimeframeData, setEventTimeframeData] = useState({});
+  // ref + export helper for the single event chart
+  const eventRef = useRef(null);
+  const exportChart = (ref, filename) => {
+    if (!ref.current) return;
+    const link = document.createElement('a');
+    link.href = ref.current.toBase64Image();
+    link.download = `${filename}.png`;
+    link.click();
+  };
 
   useEffect(() => {
     if (csvData.originalData && csvData.originalData.length > 0) {
@@ -115,8 +138,14 @@ function EventAnalysisPage() {
             </div>
             {eventTimeframeData.labels && eventTimeframeData.labels.length > 0 && (
               <div className="chart-container unified-box">
-                <h2 className="chart-title">Activity Over Time</h2>
-                <Line data={eventTimeframeData} />
+                <h2 className="chart-title">Event Activity Over Time</h2>
+                <button
+                  className="export-button"
+                  onClick={() => exportChart(eventRef, 'event-activity-over-time')}
+                >
+                  Export
+                </button>
+                <Line ref={eventRef} data={eventTimeframeData} />
               </div>
             )}
           </>

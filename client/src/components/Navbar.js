@@ -5,7 +5,8 @@ import { useCsvData } from '../context/CsvDataContext';
 import dayjs from 'dayjs';
 
 function Navbar() {
-  const { timeframe } = useCsvData();
+  const { timeframe, csvData } = useCsvData();
+  const fileName = csvData?.fileName;
   const [includeTeachers, setIncludeTeachers] = useState(false);
 
   const handleCheckboxChange = () => {
@@ -32,18 +33,28 @@ function Navbar() {
         <li><Link to="/event-analysis">Event Analysis</Link></li>
         <li><Link to="/material-analysis">Material Analysis</Link></li>
       </ul>
-      <div className="timeframe-display">
-        <p>{displayTimeframe()}</p>
-      </div>
-      <div className="checkbox-container">
-        <label>
-          <input
-            type="checkbox"
-            checked={includeTeachers}
-            onChange={handleCheckboxChange}
-          />
-          Include Teachers
-        </label>
+
+      <div className="navbar-bottom">
+        {fileName && (
+          <div className="filename-display">
+            <p>File: {fileName}</p>
+          </div>
+        )}
+
+        <div className="timeframe-display">
+          <p>{displayTimeframe()}</p>
+        </div>
+
+        <div className="checkbox-container">
+          <label>
+            <input
+              type="checkbox"
+              checked={includeTeachers}
+              onChange={handleCheckboxChange}
+            />
+            Include Teachers
+          </label>
+        </div>
       </div>
     </div>
   );

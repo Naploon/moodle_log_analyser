@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCsvData } from '../context/CsvDataContext';
 import { useCsv } from '../context/CsvContext';
@@ -13,6 +13,18 @@ dayjs.extend(customParseFormat);
 
 // Register the necessary components
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement);
+
+// ── plugin: draw white background for on-screen & export
+Chart.register({
+  id: 'whiteBackground',
+  beforeDraw: chart => {
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, chart.width, chart.height);
+    ctx.restore();
+  }
+});
 
 function UserPage() {
   const navigate = useNavigate();
@@ -30,6 +42,22 @@ function UserPage() {
   const [userDayOfWeekData, setUserDayOfWeekData] = useState({});
   const [userTimeframeData, setUserTimeframeData] = useState({});
   const [contextBarData, setContextBarData] = useState([]);
+
+  // refs for each chart
+  const userHourRef       = useRef(null);
+  const userDayRef        = useRef(null);
+  const componentPieRef   = useRef(null);
+  const userTimeframeRef  = useRef(null);
+  const contextRefs       = useRef([]);
+
+  // helper to export any chart ref
+  const exportChart = (ref, filename) => {
+    if (!ref.current) return;
+    const link = document.createElement('a');
+    link.href = ref.current.toBase64Image();
+    link.download = `${filename}.png`;
+    link.click();
+  };
 
   useEffect(() => {
     if (!isCsvUploaded) {
@@ -189,36 +217,44 @@ function UserPage() {
 
     // Function to create context bar data for a given component
     const createContextBarData = (componentName) => {
-      const contextCounts = {};
+      // 1) Gather all possible contexts for this component from the full CSV
+      const allContexts = Array.from(
+        new Set(
+          csvData.originalData
+            .filter(row => row['Komponent'] === componentName)
+            .map(row => row['Sündmuse kontekst'])
+        )
+      );
+
+      // 2) Initialize every context's count to zero
+      const contextCounts = allContexts.reduce((acc, ctx) => {
+        acc[ctx] = 0;
+        return acc;
+      }, {});
+
+      // 3) Tally up only the user's entries
       userData.forEach(entry => {
         if (entry['Komponent'] === componentName) {
-          const context = entry['Sündmuse kontekst'];
-          if (!contextCounts[context]) {
-            contextCounts[context] = 0;
-          }
-          contextCounts[context]++;
+          contextCounts[entry['Sündmuse kontekst']]++;
         }
       });
 
-      const contextLabels = Object.keys(contextCounts);
-      const contextData = contextLabels.map(label => contextCounts[label]);
-
       return {
-        labels: contextLabels,
+        labels: allContexts,
         datasets: [
           {
-            label: `Sündmuse Kontekst for ${componentName}`,
-            data: contextData,
+            label: `Sündmuse kontekst for ${componentName}`,
+            data: allContexts.map(ctx => contextCounts[ctx]),
             backgroundColor: '#f78c6a',
           },
         ],
       };
     };
 
-    // Generate context bar data for each unique "Komponent"
-    const uniqueComponents = [...new Set(userData.map(entry => entry['Komponent']))];
+    // Generate context bar data for each unique component
+    const uniqueComponents = [...new Set(userData.map(e => e['Komponent']))]
+      .filter(component => component !== 'Süsteem');
     const allContextBarData = uniqueComponents.map(createContextBarData);
-
     setContextBarData(allContextBarData);
   };
 
@@ -274,37 +310,76 @@ function UserPage() {
               </div>
             </div>
             <div className="chart-row">
-              {userChartData.labels && userChartData.labels.length > 0 && (
+              {userChartData.labels?.length > 0 && (
                 <div className="chart-container unified-box">
                   <h2 className="chart-title">Activity Over Time of Day</h2>
-                  <Line data={userChartData} />
+                  <button
+                    className="export-button"
+                    onClick={() => exportChart(userHourRef, 'user-activity-hour')}
+                  >
+                    Export
+                  </button>
+                  <Line ref={userHourRef} data={userChartData} />
                 </div>
               )}
-              {userDayOfWeekData.labels && userDayOfWeekData.labels.length > 0 && (
+              {userDayOfWeekData.labels?.length > 0 && (
                 <div className="chart-container unified-box">
                   <h2 className="chart-title">Activity Over Day of Week</h2>
-                  <Bar data={userDayOfWeekData} />
+                  <button
+                    className="export-button"
+                    onClick={() => exportChart(userDayRef, 'user-activity-dayofweek')}
+                  >
+                    Export
+                  </button>
+                  <Bar ref={userDayRef} data={userDayOfWeekData} />
                 </div>
               )}
             </div>
-            {userTimeframeData.labels && userTimeframeData.labels.length > 0 && (
+            {userTimeframeData.labels?.length > 0 && (
               <div className="chart-container unified-box">
                 <h2 className="chart-title">Activity Over Time</h2>
-                <Line data={userTimeframeData} />
+                <button
+                  className="export-button"
+                  onClick={() => exportChart(userTimeframeRef, 'user-activity-timeframe')}
+                >
+                  Export
+                </button>
+                <Line ref={userTimeframeRef} data={userTimeframeData} />
               </div>
             )}
-            {componentDistributionData.labels && componentDistributionData.labels.length > 0 && (
+            {componentDistributionData.labels?.length > 0 && (
               <div className="chart-container unified-box">
                 <h2 className="chart-title">Component Distribution</h2>
-                <Pie data={componentDistributionData} />
+                <button
+                  className="export-button"
+                  onClick={() => exportChart(componentPieRef, 'user-component-dist')}
+                >
+                  Export
+                </button>
+                <Pie ref={componentPieRef} data={componentDistributionData} />
               </div>
             )}
             <div className="chart-row">
-              {Array.isArray(contextBarData) && contextBarData.map((data, index) => (
-                data.labels && data.labels.length > 0 && (
-                  <div key={index} className="chart-container unified-box">
+              {contextBarData.map((data, idx) => (
+                data.labels?.length > 0 && (
+                  <div key={idx} className="chart-container unified-box">
                     <h2 className="chart-title">{data.datasets[0].label}</h2>
-                    <Bar data={data} />
+                    <button
+                      className="export-button"
+                      onClick={() =>
+                        exportChart(contextRefs.current[idx], `context-${data.datasets[0].label}`)
+                      }
+                    >
+                      Export
+                    </button>
+                    <Bar
+                      ref={el => (contextRefs.current[idx] = el)}
+                      data={data}
+                      options={{
+                        indexAxis: 'y',
+                        scales: { x: { beginAtZero: true } }
+                      }}
+                    />
                   </div>
                 )
               ))}

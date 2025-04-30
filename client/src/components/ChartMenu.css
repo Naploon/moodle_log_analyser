@@ -1,0 +1,36 @@
+.chart-menu {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.kebab-button {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.kebab-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  list-style: none;
+  padding: 4px 0;
+  z-index: 10;
+}
+
+.kebab-dropdown li {
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.kebab-dropdown li:hover {
+  background: #f5f5f5;
+}

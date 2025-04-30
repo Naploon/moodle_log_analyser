@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Line, Bar } from 'react-chartjs-2';
-import { Chart, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import ChartWithMenu from '../components/ChartWithMenu';
 import './Dashboard.css';
 import { useCsv } from '../context/CsvContext';
 import { useCsvData } from '../context/CsvDataContext';
 import Navbar from '../components/Navbar';
 import dayjs from 'dayjs';
-
-// Register the necessary components
-Chart.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -21,6 +18,11 @@ function Dashboard() {
   const [topUsersData, setTopUsersData] = useState({});
   const [bottomUsersData, setBottomUsersData] = useState({});
   const [timeframeData, setTimeframeData] = useState({});
+  const [resourceContextData, setResourceContextData] = useState([]);
+  const COMPONENT_COLORS = [
+    '#FF6384', '#36A2EB', '#FFCE56',
+    '#4BC0C0', '#9966FF', '#FF9F40'
+  ];
 
   useEffect(() => {
     if (!isCsvUploaded) {
@@ -85,26 +87,26 @@ function Dashboard() {
       // Sort users by activity
       const sortedUsers = Object.entries(userActivity).sort((a, b) => b[1] - a[1]);
 
-      // Top 5 users
-      const topUsers = sortedUsers.slice(0, 5);
+      // Top 10 users
+      const topUsers = sortedUsers.slice(0, 10);
       setTopUsersData({
         labels: topUsers.map(([user]) => user),
         datasets: [
           {
-            label: 'Top 5 Users by Activity',
+            label: 'Top 10 Users by Activity',
             data: topUsers.map(([, count]) => count),
             backgroundColor: '#4caf50',
           },
         ],
       });
 
-      // Bottom 5 users
-      const bottomUsers = sortedUsers.slice(-5);
+      // Bottom 10 users
+      const bottomUsers = sortedUsers.slice(-10);
       setBottomUsersData({
         labels: bottomUsers.map(([user]) => user),
         datasets: [
           {
-            label: 'Bottom 5 Users by Activity',
+            label: 'Bottom 10 Users by Activity',
             data: bottomUsers.map(([, count]) => count),
             backgroundColor: '#f44336',
           },
@@ -140,6 +142,39 @@ function Dashboard() {
         ],
       });
     }
+
+    // 3) build "Sündmuse kontekst" distribution for EVERY Komponent
+    if (csvData.originalData && csvData.originalData.length > 0) {
+      const components = Array.from(
+        new Set(csvData.originalData.map(r => r['Komponent']))
+      );
+
+      const resourceData = components.map((comp, idx) => {
+        // tally up contexts
+        const counts = {};
+        csvData.originalData.forEach(row => {
+          if (row['Komponent'] === comp) {
+            const ctx = row['Sündmuse kontekst'];
+            counts[ctx] = (counts[ctx] || 0) + 1;
+          }
+        });
+        const labels = Object.keys(counts);
+        const data   = labels.map(l => counts[l]);
+
+        return {
+          labels,
+          datasets: [
+            {
+              label: `${comp} Context Distribution`,
+              data,
+              backgroundColor: COMPONENT_COLORS[idx % COMPONENT_COLORS.length],
+            }
+          ]
+        };
+      });
+
+      setResourceContextData(resourceData);
+    }
   }, [csvData.originalData]);
 
   return (
@@ -160,36 +195,74 @@ function Dashboard() {
           ))}
         </div>
         <div className="chart-row">
-          {chartData.labels && chartData.labels.length > 0 && (
-            <div className="chart-container unified-box">
-              <h2 className="chart-title">Activity Over Time of Day</h2>
-              <Line data={chartData} />
-            </div>
+          {/* 1) Hourly Line */}
+          {chartData.labels?.length > 0 && (
+            <ChartWithMenu
+              ChartComponent={Line}
+              data={chartData}
+              filename="activity-hourly"
+              title="Activity Over Time of Day"
+            />
           )}
-          {dayOfWeekData.labels && dayOfWeekData.labels.length > 0 && (
-            <div className="chart-container unified-box">
-              <h2 className="chart-title">Activity Over Day of Week</h2>
-              <Bar data={dayOfWeekData} />
-            </div>
+          {/* 2) Day-of-Week Bar */}
+          {dayOfWeekData.labels?.length > 0 && (
+            <ChartWithMenu
+              ChartComponent={Bar}
+              data={dayOfWeekData}
+              filename="activity-dayofweek"
+              title="Activity Over Day of Week"
+            />
           )}
         </div>
-        {timeframeData.labels && timeframeData.labels.length > 0 && (
-          <div className="chart-container unified-box">
-            <h2 className="chart-title">Activity Over Timeframe</h2>
-            <Line data={timeframeData} />
-          </div>
+        {/* 3) Timeframe Line */}
+        {timeframeData.labels?.length > 0 && (
+          <ChartWithMenu
+            ChartComponent={Line}
+            data={timeframeData}
+            filename="activity-timeframe"
+            title="Activity Over Timeframe"
+          />
         )}
-        {topUsersData.labels && topUsersData.labels.length > 0 && (
-          <div className="chart-container unified-box">
-            <h2 className="chart-title">Top 5 Users by Activity</h2>
-            <Bar data={topUsersData} />
-          </div>
-        )}
-        {bottomUsersData.labels && bottomUsersData.labels.length > 0 && (
-          <div className="chart-container unified-box">
-            <h2 className="chart-title">Bottom 5 Users by Activity</h2>
-            <Bar data={bottomUsersData} />
-          </div>
+        <div className="chart-row">
+          {/* 4) Top Users Bar */}
+          {topUsersData.labels?.length > 0 && (
+            <ChartWithMenu
+              ChartComponent={Bar}
+              data={topUsersData}
+              filename="top-users"
+              title="Top 10 Users by Activity"
+            />
+          )}
+          {/* 5) Bottom Users Bar */}
+          {bottomUsersData.labels?.length > 0 && (
+            <ChartWithMenu
+              ChartComponent={Bar}
+              data={bottomUsersData}
+              filename="bottom-users"
+              title="Bottom 10 Users by Activity"
+            />
+          )}
+        </div>
+        {/* 4) render one Bar for each component */}
+        {resourceContextData.length > 0 && (
+          <>
+            <h2 className="page-title">Context Distribution by Component</h2>
+            <div className="chart-row">
+              {resourceContextData.map((cfg, i) => (
+                <ChartWithMenu
+                  key={i}
+                  ChartComponent={Bar}
+                  data={cfg}
+                  filename={`resource-${cfg.datasets[0].label}`}
+                  title={cfg.datasets[0].label}
+                  options={{
+                    indexAxis: 'y',
+                    scales: { x: { beginAtZero: true } }
+                  }}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

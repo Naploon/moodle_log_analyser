@@ -9,6 +9,7 @@
 }
 
 .chart-container {
+  position: relative;    /* allow absolute-positioned export button */
   width: calc(100% - 40px);
   max-width: 80%;
   margin: 20px 0;
@@ -78,4 +79,19 @@
   gap: 20px; /* Add space between the charts */
   margin-bottom: 20px;
   width: 100%; /* Ensure full width */
+}
+
+/* tiny export-png button */
+.export-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 6px;
+  font-size: 0.65rem;
+  background-color: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  z-index: 10;
 }

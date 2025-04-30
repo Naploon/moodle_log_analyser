@@ -29,7 +29,13 @@ function LandingPage() {
       parseCSV(droppedFile, (data) => {
         const processedData = processCSVData(data);
         const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
-        setCsvData({ originalData: data, processedData, distinctUserCount, distinctContextCounts });
+        setCsvData({
+          originalData: data,
+          processedData,
+          distinctUserCount,
+          distinctContextCounts,
+          fileName: droppedFile.name
+        });
         setIsCsvUploaded(true);
       }, handleError);
     } else {
@@ -46,10 +52,20 @@ function LandingPage() {
     if (selectedFile && selectedFile.type === 'text/csv') {
       setFile(selectedFile);
       parseCSV(selectedFile, (data) => {
-        const filteredData = filterDataByTimeframe(data, startDate ? dayjs(startDate) : null, endDate ? dayjs(endDate) : null);
+        const filteredData = filterDataByTimeframe(
+          data,
+          startDate ? dayjs(startDate) : null,
+          endDate ? dayjs(endDate) : null
+        );
         const processedData = processCSVData(filteredData);
         const { distinctUserCount, distinctContextCounts } = calculateMetrics(filteredData);
-        setCsvData({ originalData: filteredData, processedData, distinctUserCount, distinctContextCounts });
+        setCsvData({
+          originalData: filteredData,
+          processedData,
+          distinctUserCount,
+          distinctContextCounts,
+          fileName: selectedFile.name
+        });
         setIsCsvUploaded(true);
       }, handleError);
     } else {
@@ -59,17 +75,24 @@ function LandingPage() {
 
   const handleProcessStart = () => {
     if (file) {
-      parseCSV(file, 
-        (data) => {
-          const filteredData = filterDataByTimeframe(data, startDate ? dayjs(startDate) : null, endDate ? dayjs(endDate) : null);
-          const processedData = processCSVData(filteredData);
-          const { distinctUserCount, distinctContextCounts } = calculateMetrics(filteredData);
-          setCsvData({ originalData: filteredData, processedData, distinctUserCount, distinctContextCounts });
-          setTimeframe({ startDate, endDate });
-          navigate('/dashboard');
-        },
-        handleError
-      );
+      parseCSV(file, (data) => {
+        const filteredData = filterDataByTimeframe(
+          data,
+          startDate ? dayjs(startDate) : null,
+          endDate ? dayjs(endDate) : null
+        );
+        const processedData = processCSVData(filteredData);
+        const { distinctUserCount, distinctContextCounts } = calculateMetrics(filteredData);
+        setCsvData({
+          originalData: filteredData,
+          processedData,
+          distinctUserCount,
+          distinctContextCounts,
+          fileName: file.name
+        });
+        setTimeframe({ startDate, endDate });
+        navigate('/dashboard');
+      }, handleError);
     } else {
       alert('No CSV file selected.');
     }
