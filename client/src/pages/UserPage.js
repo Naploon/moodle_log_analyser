@@ -3,28 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useCsvData } from '../context/CsvDataContext';
 import { useCsv } from '../context/CsvContext';
 import Navbar from '../components/Navbar';
-import dayjs from 'dayjs';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { Line, Pie, Bar } from 'react-chartjs-2';
-import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement } from 'chart.js';
+import ChartWithMenu from '../components/ChartWithMenu';
 import './UserPage.css';
 
+//introduce dayjs & the parser plugin
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
 dayjs.extend(customParseFormat);
-
-// Register the necessary components
-Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement);
-
-// ── plugin: draw white background for on-screen & export
-Chart.register({
-  id: 'whiteBackground',
-  beforeDraw: chart => {
-    const ctx = chart.ctx;
-    ctx.save();
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, chart.width, chart.height);
-    ctx.restore();
-  }
-});
 
 function UserPage() {
   const navigate = useNavigate();
@@ -43,21 +29,11 @@ function UserPage() {
   const [userTimeframeData, setUserTimeframeData] = useState({});
   const [contextBarData, setContextBarData] = useState([]);
 
-  // refs for each chart
-  const userHourRef       = useRef(null);
-  const userDayRef        = useRef(null);
-  const componentPieRef   = useRef(null);
-  const userTimeframeRef  = useRef(null);
-  const contextRefs       = useRef([]);
-
-  // helper to export any chart ref
-  const exportChart = (ref, filename) => {
-    if (!ref.current) return;
-    const link = document.createElement('a');
-    link.href = ref.current.toBase64Image();
-    link.download = `${filename}.png`;
-    link.click();
-  };
+  // palette for each "komponent" chart
+  const COMPONENT_COLORS = [
+    '#FF6384', '#36A2EB', '#FFCE56',
+    '#4BC0C0', '#9966FF', '#FF9F40'
+  ];
 
   useEffect(() => {
     if (!isCsvUploaded) {
@@ -216,7 +192,7 @@ function UserPage() {
     });
 
     // Function to create context bar data for a given component
-    const createContextBarData = (componentName) => {
+    const createContextBarData = (componentName, idx) => {
       // 1) Gather all possible contexts for this component from the full CSV
       const allContexts = Array.from(
         new Set(
@@ -245,7 +221,7 @@ function UserPage() {
           {
             label: `Sündmuse kontekst for ${componentName}`,
             data: allContexts.map(ctx => contextCounts[ctx]),
-            backgroundColor: '#f78c6a',
+            backgroundColor: COMPONENT_COLORS[idx % COMPONENT_COLORS.length],
           },
         ],
       };
@@ -254,7 +230,9 @@ function UserPage() {
     // Generate context bar data for each unique component
     const uniqueComponents = [...new Set(userData.map(e => e['Komponent']))]
       .filter(component => component !== 'Süsteem');
-    const allContextBarData = uniqueComponents.map(createContextBarData);
+    const allContextBarData = uniqueComponents
+      .map((comp, idx) => createContextBarData(comp, idx));
+
     setContextBarData(allContextBarData);
   };
 
@@ -311,77 +289,55 @@ function UserPage() {
             </div>
             <div className="chart-row">
               {userChartData.labels?.length > 0 && (
-                <div className="chart-container unified-box">
-                  <h2 className="chart-title">Activity Over Time of Day</h2>
-                  <button
-                    className="export-button"
-                    onClick={() => exportChart(userHourRef, 'user-activity-hour')}
-                  >
-                    Export
-                  </button>
-                  <Line ref={userHourRef} data={userChartData} />
-                </div>
+                <ChartWithMenu
+                  ChartComponent={Line}
+                  data={userChartData}
+                  filename="user-activity-hour"
+                  title="Activity Over Time of Day"
+                />
               )}
               {userDayOfWeekData.labels?.length > 0 && (
-                <div className="chart-container unified-box">
-                  <h2 className="chart-title">Activity Over Day of Week</h2>
-                  <button
-                    className="export-button"
-                    onClick={() => exportChart(userDayRef, 'user-activity-dayofweek')}
-                  >
-                    Export
-                  </button>
-                  <Bar ref={userDayRef} data={userDayOfWeekData} />
-                </div>
+                <ChartWithMenu
+                  ChartComponent={Bar}
+                  data={userDayOfWeekData}
+                  filename="user-activity-dayofweek"
+                  title="Activity Over Day of Week"
+                />
               )}
             </div>
             {userTimeframeData.labels?.length > 0 && (
-              <div className="chart-container unified-box">
-                <h2 className="chart-title">Activity Over Time</h2>
-                <button
-                  className="export-button"
-                  onClick={() => exportChart(userTimeframeRef, 'user-activity-timeframe')}
-                >
-                  Export
-                </button>
-                <Line ref={userTimeframeRef} data={userTimeframeData} />
-              </div>
+              <ChartWithMenu
+                ChartComponent={Line}
+                data={userTimeframeData}
+                filename="user-activity-timeframe"
+                title="Activity Over Time"
+              />
             )}
             {componentDistributionData.labels?.length > 0 && (
-              <div className="chart-container unified-box">
-                <h2 className="chart-title">Component Distribution</h2>
-                <button
-                  className="export-button"
-                  onClick={() => exportChart(componentPieRef, 'user-component-dist')}
-                >
-                  Export
-                </button>
-                <Pie ref={componentPieRef} data={componentDistributionData} />
-              </div>
+              <ChartWithMenu
+                ChartComponent={Pie}
+                data={componentDistributionData}
+                filename="user-component-distribution"
+                title="Component Distribution"
+                options={{
+                  plugins: {
+                    legend: {
+                      position: 'right'
+                    }
+                  }
+                }}
+              />
             )}
             <div className="chart-row">
-              {contextBarData.map((data, idx) => (
-                data.labels?.length > 0 && (
-                  <div key={idx} className="chart-container unified-box">
-                    <h2 className="chart-title">{data.datasets[0].label}</h2>
-                    <button
-                      className="export-button"
-                      onClick={() =>
-                        exportChart(contextRefs.current[idx], `context-${data.datasets[0].label}`)
-                      }
-                    >
-                      Export
-                    </button>
-                    <Bar
-                      ref={el => (contextRefs.current[idx] = el)}
-                      data={data}
-                      options={{
-                        indexAxis: 'y',
-                        scales: { x: { beginAtZero: true } }
-                      }}
-                    />
-                  </div>
-                )
+              {contextBarData.map((cfg, idx) => (
+                <ChartWithMenu
+                  key={idx}
+                  ChartComponent={Bar}
+                  data={cfg}
+                  filename={`user-context-${cfg.datasets[0].label}`}
+                  title={cfg.datasets[0].label}
+                  options={{ indexAxis: 'y', scales: { x: { beginAtZero: true } } }}
+                />
               ))}
             </div>
           </>

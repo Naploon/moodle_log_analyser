@@ -147,7 +147,9 @@ function Dashboard() {
     if (csvData.originalData && csvData.originalData.length > 0) {
       const components = Array.from(
         new Set(csvData.originalData.map(r => r['Komponent']))
-      );
+      )
+      // exclude the "Süsteem" component entirely
+      .filter(component => component !== 'Süsteem');
 
       const resourceData = components.map((comp, idx) => {
         // tally up contexts
