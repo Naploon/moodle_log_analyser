@@ -5,14 +5,11 @@ import { useCsvData } from '../context/CsvDataContext';
 import dayjs from 'dayjs';
 
 function Navbar() {
-  const { timeframe, csvData } = useCsvData();
+  const { timeframe, csvData, includeTeachers, setIncludeTeachers } = useCsvData();
   const fileName = csvData?.fileName;
-  const [includeTeachers, setIncludeTeachers] = useState(false);
 
   const handleCheckboxChange = () => {
     setIncludeTeachers(!includeTeachers);
-    // Placeholder for logic to include/exclude teachers
-    console.log('Include Teachers:', !includeTeachers);
   };
 
   const formatDate = (date) => date ? dayjs(date).format('D/M/YYYY') : '...';

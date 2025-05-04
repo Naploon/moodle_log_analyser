@@ -105,16 +105,25 @@ export function calculateMetrics(data) {
   return { distinctUserCount, distinctContextCounts };
 }
 
-export function filterDataByTimeframe(data, startTime, endTime) {
+export function filterDataByTimeframe(data, startDate, endDate) {
+  // If neither boundary is provided, just return everything
+  if (!startDate && !endDate) {
+    return data;
+  }
+
   return data.filter(row => {
-    const timestamp = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
-    if (!timestamp.isValid()) {
+    const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
+    if (!date.isValid()) {
       return false;
     }
-    
-    const isAfterStart = startTime ? timestamp.isAfter(startTime) : true;
-    const isBeforeEnd = endTime ? timestamp.isBefore(endTime) : true;
-    
-    return isAfterStart && isBeforeEnd;
+    // if a startDate is set, drop anything before it
+    if (startDate && date.isBefore(startDate, 'day')) {
+      return false;
+    }
+    // if an endDate is set, drop anything after it
+    if (endDate && date.isAfter(endDate, 'day')) {
+      return false;
+    }
+    return true;
   });
 }

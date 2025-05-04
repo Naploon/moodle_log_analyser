@@ -24,23 +24,38 @@ function LandingPage() {
   const handleDrop = (event) => {
     event.preventDefault();
     const droppedFile = event.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === 'text/csv') {
-      setFile(droppedFile);
-      parseCSV(droppedFile, (data) => {
-        const processedData = processCSVData(data);
-        const { distinctUserCount, distinctContextCounts } = calculateMetrics(data);
-        setCsvData({
-          originalData: data,
-          processedData,
-          distinctUserCount,
-          distinctContextCounts,
-          fileName: droppedFile.name
-        });
-        setIsCsvUploaded(true);
-      }, handleError);
-    } else {
+    const isCsv = droppedFile &&
+      (droppedFile.type === 'text/csv' ||
+       droppedFile.name.toLowerCase().endsWith('.csv'));
+    if (!isCsv) {
       alert('Please drop a valid CSV file.');
+      return;
     }
+
+    setFile(droppedFile);
+
+    parseCSV(droppedFile, (data) => {
+      const filteredData = filterDataByTimeframe(
+        data,
+        startDate ? dayjs(startDate) : null,
+        endDate   ? dayjs(endDate)   : null
+      );
+      const processedData = processCSVData(filteredData);
+      const { distinctUserCount, distinctContextCounts } = calculateMetrics(filteredData);
+
+      setCsvData({
+        originalData: filteredData,
+        processedData,
+        distinctUserCount,
+        distinctContextCounts,
+        fileName: droppedFile.name
+      });
+
+      setTimeframe({ startDate, endDate });
+
+      setIsCsvUploaded(true);
+      navigate('/dashboard');
+    }, handleError);
   };
 
   const handleDragOver = (event) => {
