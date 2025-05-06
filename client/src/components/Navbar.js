@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import './Navbar.css';
 import { useCsvData } from '../context/CsvDataContext';
 import dayjs from 'dayjs';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 function Navbar() {
-  const { timeframe, csvData, includeTeachers, setIncludeTeachers } = useCsvData();
-  const fileName = csvData?.fileName;
+  const { timeframe, csvData, includeTeachers, setIncludeTeachers, setTimeframe } = useCsvData();
+  const originalData = csvData?.originalData || [];
+  const courseContext = useMemo(() => {
+    const hit = originalData.find(r => r['Sündmuse nimi'] === 'Kursust on vaadatud.');
+    return hit?.['Sündmuse kontekst'] || '';
+  }, [originalData]);
 
   const handleCheckboxChange = () => {
     setIncludeTeachers(!includeTeachers);
@@ -22,6 +28,10 @@ function Navbar() {
     return `Timeframe: ${formatDate(startDate)} - ${formatDate(endDate)}`;
   };
 
+  const resetTimeframe = () => {
+    setTimeframe({ startDate: null, endDate: null });
+  };
+
   return (
     <div className="navbar">
       <ul>
@@ -32,14 +42,50 @@ function Navbar() {
       </ul>
 
       <div className="navbar-bottom">
-        {fileName && (
+        {courseContext && (
           <div className="filename-display">
-            <p>File: {fileName}</p>
+            <p>{courseContext}</p>
           </div>
         )}
 
         <div className="timeframe-display">
-          <p>{displayTimeframe()}</p>
+          {displayTimeframe()}
+          <button 
+            className="reset-timeframe-btn" 
+            onClick={resetTimeframe}
+          >
+            Reset to All Time
+          </button>
+        </div>
+
+        <div className="date-picker-container">
+          <DatePicker
+            selected={timeframe.startDate}
+            onChange={(date) => setTimeframe({ ...timeframe, startDate: date })}
+            selectsStart
+            startDate={timeframe.startDate}
+            endDate={timeframe.endDate}
+            placeholderText="Start Date"
+            dateFormat="dd/MM/yyyy"
+            popperPlacement="top-end"
+            popperProps={{
+              positionFixed: true
+            }}
+          />
+          <DatePicker
+            selected={timeframe.endDate}
+            onChange={(date) => setTimeframe({ ...timeframe, endDate: date })}
+            selectsEnd
+            startDate={timeframe.startDate}
+            endDate={timeframe.endDate}
+            minDate={timeframe.startDate}
+            placeholderText="End Date"
+            dateFormat="dd/MM/yyyy"
+            popperPlacement="top-end"
+            popperProps={{
+              positionFixed: true
+            }}
+          />
         </div>
 
         <div className="checkbox-container">

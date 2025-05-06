@@ -22,6 +22,8 @@ function UserPage() {
   const [userActivity, setUserActivity] = useState(0);
   const [averageDailyActivities, setAverageDailyActivities] = useState(0);
   const [lastActivityTimestamp, setLastActivityTimestamp] = useState('');
+  const [submissionEngagementScore, setSubmissionEngagementScore] = useState(0);
+  const [materialEngagementScore, setMaterialEngagementScore] = useState(0);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [userChartData, setUserChartData] = useState({});
   const [componentDistributionData, setComponentDistributionData] = useState({});
@@ -69,6 +71,31 @@ function UserPage() {
 
     const userEntries = csvData.originalData.filter(row => row['Kasutaja täisnimi'] === user);
     setUserActivity(userEntries.length);
+
+    // 1) Filter down to file‐submission & test events
+    const submissionEvents = userEntries.filter(entry =>
+      entry['Komponent'] === 'Faili esitamine' || entry['Komponent'] === 'Test'
+    );
+    // 2) Count distinct contexts for this user
+    const distinctSubmissionContexts = new Set(
+      submissionEvents.map(entry => entry['Sündmuse kontekst'])
+    ).size;
+
+    // 3) Compute total distinct contexts across all users
+    const totalPossibleContexts = Array.from(new Set(
+      csvData.originalData
+        .filter(entry =>
+          entry['Komponent'] === 'Faili esitamine' ||
+          entry['Komponent'] === 'Test'
+        )
+        .map(entry => entry['Sündmuse kontekst'])
+    )).length;
+
+    // 4) Normalize and multiply by 100
+    const normalizedScore = totalPossibleContexts > 0
+      ? (distinctSubmissionContexts / totalPossibleContexts) * 100
+      : 0;
+    setSubmissionEngagementScore(normalizedScore);
 
     // Calculate average daily activities
     const dates = userEntries.map(row => dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss').format('YYYY-MM-DD'));
@@ -234,6 +261,27 @@ function UserPage() {
       .map((comp, idx) => createContextBarData(comp, idx));
 
     setContextBarData(allContextBarData);
+
+    // —— MATERIAL ENGAGEMENT ——
+    // 1) Filter down to material components
+    const materialEvents = userEntries.filter(entry =>
+      ['Fail', 'Viki', 'URL', 'Leht'].includes(entry['Komponent'])
+    );
+    // 2) Count distinct material contexts for this user
+    const distinctMaterialContexts = new Set(
+      materialEvents.map(entry => entry['Sündmuse kontekst'])
+    ).size;
+    // 3) Compute total possible material contexts across all data
+    const totalPossibleMaterialContexts = Array.from(new Set(
+      csvData.originalData
+        .filter(entry => ['Fail', 'Viki', 'URL', 'Leht'].includes(entry['Komponent']))
+        .map(entry => entry['Sündmuse kontekst'])
+    )).length;
+    // 4) Normalize & store as percentage
+    const normalizedMaterial = totalPossibleMaterialContexts > 0
+      ? (distinctMaterialContexts / totalPossibleMaterialContexts) * 100
+      : 0;
+    setMaterialEngagementScore(normalizedMaterial);
   };
 
   const handleBlur = () => {
@@ -285,6 +333,14 @@ function UserPage() {
               <div className="metric-box unified-box">
                 <div className="metric-label">Last Activity Timestamp</div>
                 <div className="metric-number">{lastActivityTimestamp}</div>
+              </div>
+              <div className="metric-box unified-box">
+                <div className="metric-label">Submission Engagement (%)</div>
+                <div className="metric-number">{submissionEngagementScore.toFixed(2)}%</div>
+              </div>
+              <div className="metric-box unified-box">
+                <div className="metric-label">Material Engagement (%)</div>
+                <div className="metric-number">{materialEngagementScore.toFixed(2)}%</div>
               </div>
             </div>
             <div className="chart-row">

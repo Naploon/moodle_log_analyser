@@ -2,8 +2,8 @@
 
 body {
   font-family: 'Poppins', sans-serif;
-  background-color: #073a4b;
-  color: #f8f8f8;
+  background-color: #f5f8fa;
+  color: #333333;
   margin: 0;
   padding: 0;
 }
@@ -11,22 +11,25 @@ body {
 .landing-page {
   text-align: center;
   padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .title {
   font-size: 2.5rem;
   margin-bottom: 20px;
   color: #f04770;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .description {
   font-size: 1.2rem;
   margin-bottom: 40px;
-  color: #f78c6a;
+  color: #666666;
 }
 
 .drop-zone {
-  border: 2px dashed #ffd167;
+  border: 2px dashed #f8f8f8;
   border-radius: 10px;
   padding: 40px;
   width: 80%;
@@ -34,12 +37,17 @@ body {
   margin: 0 auto 20px;
   cursor: pointer;
   transition: background-color 0.3s;
-  background-color: #108AB1;
+  background-color: #073a4b;
   color: #f8f8f8;
 }
 
 .drop-zone:hover {
-  background-color: #06d7a0;
+  background-color: #0a4d64;
+  border-color: #f78c6a;
+}
+
+.drop-zone p {
+  color: #f8f8f8;
 }
 
 .date-picker {
@@ -54,32 +62,94 @@ body {
   width: auto;
 }
 
-.react-datepicker__input-container input {
+.landing-page .react-datepicker__input-container input {
   width: 150px;
   padding: 8px;
-  border: 1px solid #ffd167;
+  border: 1px solid #f04770;
   border-radius: 5px;
-  background-color: #073a4b;
-  color: #f8f8f8;
+  background-color: #ffffff;
+  color: #333333;
   text-align: center;
   font-family: 'Poppins', sans-serif;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.react-datepicker__input-container input::placeholder {
-  color: #f8f8f8;
+.landing-page .react-datepicker__input-container input::placeholder {
+  color: #999999;
+  opacity: 0.8;
+  font-style: italic;
 }
 
-button {
+.landing-page button {
   background-color: #f04770;
-  color: #f8f8f8;
+  color: #ffffff;
   border: none;
   border-radius: 5px;
   padding: 10px 20px;
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
+  font-weight: 600;
 }
 
-button:hover {
+.landing-page button:hover {
   background-color: #f78c6a;
+}
+
+.explanation-box {
+  background-color: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  text-align: left;
+}
+
+.help-toggle {
+  cursor: pointer;
+  padding: 10px 0;
+  border-top: 1px solid #eaeaea;
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #073a4b;
+  transition: color 0.3s;
+}
+
+.help-toggle h3 {
+  font-size: 1.1rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.help-toggle:hover {
+  color: #f04770;
+}
+
+.help-content {
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  padding: 15px 20px;
+  margin-top: 10px;
+  font-size: 0.95rem;
+}
+
+.help-content ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.help-content li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.explanation-box .description {
+  text-align: left;
+  margin-bottom: 15px;
+  line-height: 1.5;
 }

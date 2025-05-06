@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useMemo, useEffect } from 'react';
-import { processCSVData, calculateMetrics } from '../processors/csvProcessor';
+import { processCSVData, calculateMetrics, filterDataByTimeframe } from '../processors/csvProcessor';
+import dayjs from 'dayjs';
 
 const CsvDataContext = createContext();
 export const useCsvData = () => useContext(CsvDataContext);
@@ -42,18 +43,34 @@ export const CsvDataProvider = ({ children }) => {
     return rawData.filter(r => !teacherNames.includes(r['Kasutaja täisnimi']));
   }, [rawData, includeTeachers, teacherNames]);
 
-  // 5) compute processedData & metrics on that filtered set
-  const processedData = useMemo(() => processCSVData(filteredOriginalData), [filteredOriginalData]);
+  // 5) apply timeframe filter to the teacher-filtered data
+  const timeframeFilteredData = useMemo(() => {
+    if (filteredOriginalData && timeframe) {
+      return filterDataByTimeframe(
+        filteredOriginalData,
+        timeframe.startDate ? dayjs(timeframe.startDate) : null,
+        timeframe.endDate ? dayjs(timeframe.endDate) : null
+      );
+    }
+    return filteredOriginalData;
+  }, [filteredOriginalData, timeframe]);
+
+  // 6) process the data after both filters have been applied
+  const processedData = useMemo(() => 
+    processCSVData(timeframeFilteredData), 
+    [timeframeFilteredData]
+  );
+  
   const { distinctUserCount, distinctContextCounts } = useMemo(
-    () => calculateMetrics(filteredOriginalData),
-    [filteredOriginalData]
+    () => calculateMetrics(timeframeFilteredData),
+    [timeframeFilteredData]
   );
 
   return (
     <CsvDataContext.Provider value={{
-      // expose only filteredData & metrics
+      // Now csvData contains the data filtered by BOTH teachers AND timeframe
       csvData: {
-        originalData: filteredOriginalData,
+        originalData: timeframeFilteredData,  // Changed from filteredOriginalData
         processedData,
         distinctUserCount,
         distinctContextCounts,
@@ -68,7 +85,7 @@ export const CsvDataProvider = ({ children }) => {
       timeframe,
       setTimeframe,
       includeTeachers,
-      setIncludeTeachers
+      setIncludeTeachers,
     }}>
       {children}
     </CsvDataContext.Provider>

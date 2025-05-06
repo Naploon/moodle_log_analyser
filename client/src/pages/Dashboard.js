@@ -7,11 +7,12 @@ import { useCsv } from '../context/CsvContext';
 import { useCsvData } from '../context/CsvDataContext';
 import Navbar from '../components/Navbar';
 import dayjs from 'dayjs';
+import { filterDataByTimeframe } from '../processors/csvProcessor';
 
 function Dashboard() {
   const navigate = useNavigate();
   const { isCsvUploaded } = useCsv();
-  const { csvData } = useCsvData();
+  const { csvData, timeframe, filteredData } = useCsvData();
 
   const [chartData, setChartData] = useState({});
   const [dayOfWeekData, setDayOfWeekData] = useState({});
@@ -29,6 +30,35 @@ function Dashboard() {
       navigate('/'); // Redirect to landing page if no CSV is uploaded
     }
   }, [isCsvUploaded, navigate]);
+
+  useEffect(() => {
+    if (filteredData) {
+      // Update your chart data here based on filteredData
+      // Calculate activity by day of the week
+      const dayOfWeekCounts = Array(7).fill(0); // Initialize array for each day of the week
+
+      filteredData.forEach(row => {
+        const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
+        if (date.isValid()) {
+          const dayOfWeek = date.day(); // Get day of the week (0 = Sunday, 6 = Saturday)
+          dayOfWeekCounts[dayOfWeek]++;
+        }
+      });
+
+      setDayOfWeekData({
+        labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        datasets: [
+          {
+            label: 'Events per Day of the Week',
+            data: dayOfWeekCounts,
+            backgroundColor: '#4caf50',
+          },
+        ],
+      });
+
+      // Other calculations using filteredData...
+    }
+  }, [filteredData]);
 
   useEffect(() => {
     if (csvData.processedData && Object.keys(csvData.processedData).length > 0) {

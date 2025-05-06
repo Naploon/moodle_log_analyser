@@ -12,10 +12,15 @@ function LandingPage() {
   const [file, setFile] = useState(null);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const [showHelpInfo, setShowHelpInfo] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const { setIsCsvUploaded } = useCsv();
   const { setCsvData, setTimeframe } = useCsvData();
+
+  const toggleHelpInfo = () => {
+    setShowHelpInfo(!showHelpInfo);
+  };
 
   const handleError = (error) => {
     alert(error);
@@ -33,29 +38,6 @@ function LandingPage() {
     }
 
     setFile(droppedFile);
-
-    parseCSV(droppedFile, (data) => {
-      const filteredData = filterDataByTimeframe(
-        data,
-        startDate ? dayjs(startDate) : null,
-        endDate   ? dayjs(endDate)   : null
-      );
-      const processedData = processCSVData(filteredData);
-      const { distinctUserCount, distinctContextCounts } = calculateMetrics(filteredData);
-
-      setCsvData({
-        originalData: filteredData,
-        processedData,
-        distinctUserCount,
-        distinctContextCounts,
-        fileName: droppedFile.name
-      });
-
-      setTimeframe({ startDate, endDate });
-
-      setIsCsvUploaded(true);
-      navigate('/dashboard');
-    }, handleError);
   };
 
   const handleDragOver = (event) => {
@@ -66,23 +48,6 @@ function LandingPage() {
     const selectedFile = event.target.files[0];
     if (selectedFile && selectedFile.type === 'text/csv') {
       setFile(selectedFile);
-      parseCSV(selectedFile, (data) => {
-        const filteredData = filterDataByTimeframe(
-          data,
-          startDate ? dayjs(startDate) : null,
-          endDate ? dayjs(endDate) : null
-        );
-        const processedData = processCSVData(filteredData);
-        const { distinctUserCount, distinctContextCounts } = calculateMetrics(filteredData);
-        setCsvData({
-          originalData: filteredData,
-          processedData,
-          distinctUserCount,
-          distinctContextCounts,
-          fileName: selectedFile.name
-        });
-        setIsCsvUploaded(true);
-      }, handleError);
     } else {
       alert('Please select a valid CSV file.');
     }
@@ -106,6 +71,7 @@ function LandingPage() {
           fileName: file.name
         });
         setTimeframe({ startDate, endDate });
+        setIsCsvUploaded(true);
         navigate('/dashboard');
       }, handleError);
     } else {
@@ -115,17 +81,41 @@ function LandingPage() {
 
   return (
     <div className="landing-page">
-      <h1 className="title">Moodle'i logifailide analüsaator</h1>
-      <p className="description">
-        See rakendus võimaldab teil analüüsida Moodle'i logifaile.
-      </p>
+      <h1 className="title">Moodle Log File Analyzer</h1>
+      
+      <div className="explanation-box">
+        <p className="description">
+          This tool helps educators and administrators analyze student activity in Moodle courses. 
+          Upload your Moodle log file to visualize user activity patterns, identify engagement trends, 
+          and get insights on course resource usage.
+        </p>
+        
+        <div className="help-toggle" onClick={toggleHelpInfo}>
+          <h3>Where to find Moodle log files {showHelpInfo ? '▲' : '▼'}</h3>
+        </div>
+        
+        {showHelpInfo && (
+          <div className="help-content">
+            <ol>
+              <li>Log in to your Moodle course as an administrator or teacher</li>
+              <li>Navigate to the course you want to analyze</li>
+              <li>In the administration block, click on "Reports"</li>
+              <li>Select "Logs" from the dropdown menu</li>
+              <li>Set your desired filters (users, activities, time period, etc.)</li>
+              <li>At the bottom of the page, click "Download" and select "CSV format"</li>
+              <li>Upload the downloaded CSV file here for analysis</li>
+            </ol>
+          </div>
+        )}
+      </div>
+      
       <div
         className="drop-zone"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onClick={() => fileInputRef.current.click()}
       >
-        {file ? <p>File: {file.name}</p> : <p>Lohistage soovitud CSV fail siia või klõpsake siia, et valida fail</p>}
+        {file ? <p>File: {file.name}</p> : <p>Drag and drop a CSV file here or click to select a file</p>}
       </div>
       <input
         type="file"
@@ -141,7 +131,7 @@ function LandingPage() {
           selectsStart
           startDate={startDate}
           endDate={endDate}
-          placeholderText="Alguskuupäev"
+          placeholderText="Start Date"
         />
         <DatePicker
           selected={endDate}
@@ -149,7 +139,7 @@ function LandingPage() {
           selectsEnd
           startDate={startDate}
           endDate={endDate}
-          placeholderText="Lõppkuupäev"
+          placeholderText="End Date"
         />
       </div>
       <button onClick={handleProcessStart}>Start Processing</button>

@@ -50,6 +50,9 @@
 .checkbox-container {
   padding: 10px 0;
   background-color: #073a4b;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .checkbox-container label {
@@ -70,4 +73,216 @@
   font-size: 0.9rem;
   color: #f8f8f8;
   text-align: center;
+}
+
+.date-picker-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 10px;
+  gap: 5px;
+}
+
+/* Scope navbar-specific date picker styles to prevent affecting landing page */
+.navbar .react-datepicker-wrapper {
+  width: calc(50% - 2.5px);
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.navbar .react-datepicker__input-container {
+  width: 100%;
+}
+
+.navbar .react-datepicker__input-container input {
+  width: 100%;
+  padding: 5px;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: #f8f8f8;
+  color: #073a4b;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.navbar .react-datepicker__input-container input:hover:not(:focus) {
+  border-color: #f78c6a;
+  background-color: #f1f5f6;
+}
+
+/* Scope the active/focus styles */
+.navbar .react-datepicker__input-container input:focus {
+  outline: none;
+  border-color: #f78c6a;
+  box-shadow: 0 0 0 2px rgba(247, 140, 106, 0.3);
+  background-color: #fff5f0;
+  color: #073a4b;
+  font-weight: 500;
+}
+
+/* Scope the placeholder styles */
+.navbar .react-datepicker__input-container input::placeholder {
+  color: #547683;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+/* Scope the color indicators for active fields */
+.navbar .react-datepicker-wrapper:nth-child(1):has(input:focus)::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 70%;
+  background-color: #f78c6a;
+  border-radius: 2px;
+}
+
+.navbar .react-datepicker-wrapper:nth-child(2):has(input:focus)::before {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 70%;
+  background-color: #f78c6a;
+  border-radius: 2px;
+}
+
+/* Scope the background color changes */
+.navbar .react-datepicker-wrapper:nth-child(1):has(input:focus) input {
+  background-color: #fff0eb;
+}
+
+.navbar .react-datepicker-wrapper:nth-child(2):has(input:focus) input {
+  background-color: #ebfaff;
+}
+
+/* Scope the scale transform */
+.navbar .react-datepicker-wrapper:has(input:focus) {
+  transform: scale(1.03);
+}
+
+.react-datepicker-popper {
+  z-index: 1100 !important;
+  position: fixed !important;
+}
+
+.react-datepicker-popper[data-placement^='right'] {
+  margin-left: 10px !important;
+}
+
+.react-datepicker {
+  background-color: white !important;
+  box-shadow: 0 0 15px rgba(0,0,0,0.25) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 10px !important;
+}
+
+.reset-timeframe-btn {
+  background-color: #f78c6a;
+  color: #f8f8f8;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  width: 100%;
+}
+
+.reset-timeframe-btn:hover {
+  background-color: #f04770;
+}
+
+/* Make placeholder text visible and nicely styled */
+.react-datepicker__input-container input::placeholder {
+  color: #547683; /* A slightly lighter shade than the text color */
+  opacity: 0.8;
+  font-style: italic;
+}
+
+/* Enhance active/focus state with more distinct coloring */
+.react-datepicker__input-container input:focus {
+  outline: none;
+  border-color: #f78c6a;
+  box-shadow: 0 0 0 2px rgba(247, 140, 106, 0.3);
+  background-color: #fff5f0; /* Light orange/peach background when active */
+  color: #073a4b; /* Darker text for contrast */
+  font-weight: 500; /* Slightly bolder text */
+}
+
+/* Remove the generic indicator that applies to both fields */
+.react-datepicker-wrapper:has(input:focus)::before {
+  content: none;
+}
+
+/* Add a left indicator for the start date */
+.react-datepicker-wrapper:nth-child(1):has(input:focus)::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 70%;
+  background-color: #f78c6a;
+  border-radius: 2px;
+}
+
+/* Add a right indicator for the end date */
+.react-datepicker-wrapper:nth-child(2):has(input:focus)::before {
+  content: '';
+  position: absolute;
+  right: -5px; /* Position on the right instead of left */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 70%;
+  background-color: #f78c6a;
+  border-radius: 2px;
+}
+
+/* Add more space for top-positioned date pickers */
+.react-datepicker-popper[data-placement^='top'] {
+  margin-bottom: 10px !important;
+}
+
+/* Ensure the date picker is fully visible when positioned at top */
+.react-datepicker__triangle {
+  display: none !important;
+}
+
+/* Highlight the currently selected day more clearly */
+.react-datepicker__day--selected {
+  background-color: #f78c6a !important;
+  border-radius: 50% !important;
+  font-weight: bold !important;
+}
+
+/* Adjust hover effect on days */
+.react-datepicker__day:hover {
+  background-color: rgba(247, 140, 106, 0.2) !important;
+  border-radius: 50% !important;
+}
+
+/* Give selected date picker different background color */
+.react-datepicker-wrapper:nth-child(1):has(input:focus) input {
+  background-color: #fff0eb; /* Light peach for start date */
+}
+
+.react-datepicker-wrapper:nth-child(2):has(input:focus) input {
+  background-color: #ebfaff; /* Light blue for end date */
+}
+
+/* Make the active state more obvious */
+.react-datepicker-wrapper:has(input:focus) {
+  transform: scale(1.03);
 }
