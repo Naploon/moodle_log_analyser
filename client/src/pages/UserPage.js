@@ -189,31 +189,57 @@ function UserPage() {
       ],
     });
 
-    // Calculate activity over time (day interval)
+    // Calculate activity over time (day interval) and distinct contexts per day
     const timeframeCounts = {};
+    const distinctContextsPerDay = {}; // New: To store sets of contexts per day
+
     userData.forEach(row => {
       const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
+      const context = row['Sündmuse kontekst']; // Get the event context
+
       if (date.isValid()) {
         const dateString = date.format('YYYY-MM-DD');
+        // Count total activity
         if (!timeframeCounts[dateString]) {
           timeframeCounts[dateString] = 0;
         }
         timeframeCounts[dateString]++;
+
+        // Collect distinct contexts
+        if (context) {
+          if (!distinctContextsPerDay[dateString]) {
+            distinctContextsPerDay[dateString] = new Set();
+          }
+          distinctContextsPerDay[dateString].add(context);
+        }
       }
     });
 
     const timeframeLabels = Object.keys(timeframeCounts).sort();
-    const timeframeDataPoints = timeframeLabels.map(label => timeframeCounts[label]);
+    const activityDataPoints = timeframeLabels.map(label => timeframeCounts[label]);
+    const distinctContextsDataPoints = timeframeLabels.map(label =>
+      distinctContextsPerDay[label] ? distinctContextsPerDay[label].size : 0
+    );
 
     setUserTimeframeData({
       labels: timeframeLabels,
       datasets: [
         {
           label: 'User Activity Over Time',
-          data: timeframeDataPoints,
+          data: activityDataPoints,
           fill: false,
           backgroundColor: '#3e95cd',
           borderColor: '#3e95cd',
+          yAxisID: 'yActivity',
+          type: 'line',
+        },
+        {
+          label: 'Distinct Contexts per Day',
+          data: distinctContextsDataPoints,
+          backgroundColor: '#FF9F40', // Using an orange color, adjust as needed
+          borderColor: '#FF9F40',
+          yAxisID: 'yContexts',
+          type: 'bar',
         },
       ],
     });
@@ -362,12 +388,39 @@ function UserPage() {
               )}
             </div>
             {userTimeframeData.labels?.length > 0 && (
-              <ChartWithMenu
-                ChartComponent={Line}
-                data={userTimeframeData}
-                filename="user-activity-timeframe"
-                title="Activity Over Time"
-              />
+              <div className="timeframe-chart-wrapper">
+                <ChartWithMenu
+                  ChartComponent={Line}
+                  data={userTimeframeData}
+                  filename="user-activity-contexts-timeframe"
+                  title="User Activity and Distinct Contexts Over Time"
+                  options={{
+                    scales: {
+                      yActivity: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                          display: true,
+                          text: 'Number of Activities'
+                        }
+                      },
+                      yContexts: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                          display: true,
+                          text: 'Number of Distinct Contexts'
+                        },
+                        grid: {
+                          drawOnChartArea: false,
+                        },
+                      }
+                    }
+                  }}
+                />
+              </div>
             )}
             {componentDistributionData.labels?.length > 0 && (
               <ChartWithMenu

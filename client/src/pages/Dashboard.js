@@ -143,9 +143,8 @@ function Dashboard() {
         ],
       });
 
-      // Calculate activity over the entire timeframe by day
+      // Calculate activity and distinct users over the entire timeframe by day
       const timeframeCounts = {};
-      // Calculate distinct users over the entire timeframe by day
       const distinctUsersPerDayCounts = {};
 
       csvData.originalData.forEach(row => {
@@ -183,8 +182,8 @@ function Dashboard() {
             label: 'Events Over Timeframe',
             data: eventDataPoints,
             fill: false,
-            backgroundColor: '#4BC0C0',
-            borderColor: '#4BC0C0',
+            backgroundColor: '#4BC0C0', // Teal
+            borderColor: '#4BC0C0',     // Teal
             yAxisID: 'yEvents',
             type: 'line',
           },
@@ -192,8 +191,8 @@ function Dashboard() {
             label: 'Distinct Users Over Timeframe',
             data: distinctUsersDataPoints,
             fill: false,
-            backgroundColor: '#FF9F40',
-            borderColor: '#FF9F40',
+            backgroundColor: '#FF9F40', // Orange
+            borderColor: '#FF9F40',     // Orange
             yAxisID: 'yUsers',
             type: 'bar',
           },

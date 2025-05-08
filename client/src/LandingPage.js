@@ -59,8 +59,8 @@ function LandingPage() {
   };
 
   const handleSetTimeframe = (start, end) => {
-    setStartDate(start.toDate());
-    setEndDate(end.toDate());
+    setStartDate(start ? start.toDate() : null);
+    setEndDate(end ? end.toDate() : null);
   };
 
   const setThisWeek = () => {
@@ -82,8 +82,7 @@ function LandingPage() {
   };
 
   const handleResetDates = () => {
-    setStartDate(null);
-    setEndDate(null);
+    handleSetTimeframe(null, null);
   };
 
   const handleProcessStart = () => {
@@ -97,13 +96,14 @@ function LandingPage() {
         const processedData = processCSVData(filteredData);
         const { distinctUserCount, distinctContextCounts } = calculateMetrics(filteredData);
         setCsvData({
-          originalData: filteredData,
+          originalData: data,
           processedData,
-          distinctUserCount,
-          distinctContextCounts,
           fileName: file.name
         });
-        setTimeframe({ startDate, endDate });
+        setTimeframe({
+          startDate: startDate ? dayjs(startDate).toDate() : null,
+          endDate: endDate ? dayjs(endDate).toDate() : null
+        });
         setIsCsvUploaded(true);
         navigate('/dashboard');
       }, handleError);

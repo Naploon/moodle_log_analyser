@@ -87,14 +87,14 @@ body {
   border-color: #f78c6a; /* Accent color border on hover */
 }
 
-.reset-dates-button {
-  background-color: #6c757d; /* A neutral grey color */
+.reset-dates-button { /* Style for the Clear Dates button */
+  background-color: #6c757d; 
   border-color: #5a6268;
 }
 
 .reset-dates-button:hover {
   background-color: #5a6268;
-  border-color: #f04770; /* Accent color on hover for consistency */
+  border-color: #f04770; 
 }
 
 .date-picker {
@@ -128,35 +128,42 @@ body {
   font-style: italic;
 }
 
+/* General button styling for landing page */
 .landing-page button {
-  background-color: #f04770;
+  background-color: #f04770; /* Default pinkish color for other buttons */
   color: #ffffff;
   border: none;
   border-radius: 5px;
-  padding: 10px 20px;
-  font-size: 1rem;
+  padding: 10px 20px;   /* Default padding for other buttons */
+  font-size: 1rem;      /* Default font size for other buttons */
   cursor: pointer;
   transition: background-color 0.3s;
   font-weight: 600;
 }
 
+/* Hover state for general landing page buttons */
 .landing-page button:hover {
   background-color: #f78c6a;
 }
 
+/* Specific styling for the 'Start Processing' button */
 .landing-page .process-button {
-  margin-top: 10px;
-  background-color: #28a745; /* Green color */
-  color: #ffffff;
-  padding: 12px 24px; /* Increased padding for a larger button */
-  font-size: 1.1rem; /* Slightly larger font */
-  border: none;
-  border-radius: 5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  /* Properties to override general .landing-page button styles */
+  background-color: #28a745; /* Green color by default */
+  padding: 12px 24px;        /* Larger padding */
+  font-size: 1.1rem;          /* Larger font size */
+
+  /* Inherited or explicitly set properties for consistency */
+  color: #ffffff;             /* Text color */
+  border: none;               /* No border */
+  border-radius: 5px;         /* Rounded corners */
+  font-weight: 600;           /* Font weight */
+  cursor: pointer;            /* Cursor type */
+  transition: background-color 0.3s; /* Smooth transition */
+  margin-top: 10px;           /* Retained margin-top */
 }
 
+/* Hover state specifically for the 'Start Processing' button */
 .landing-page .process-button:hover {
   background-color: #218838; /* Darker green on hover */
 }

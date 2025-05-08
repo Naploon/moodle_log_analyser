@@ -95,3 +95,15 @@
   cursor: pointer;
   z-index: 10;
 }
+
+/* Styles for the full-width timeframe chart */
+.timeframe-chart-wrapper {
+  width: 100%; 
+}
+
+.timeframe-chart-wrapper .chart-container {
+  flex: none; 
+  margin: 20px auto; 
+  max-width: 96%; 
+  width: 100%; 
+}

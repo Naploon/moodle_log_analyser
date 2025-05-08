@@ -90,29 +90,3 @@
 .kebab-dropdown li:hover {
   background: #f5f5f5;
 }
-
-/* Styles for the full-width timeframe chart */
-.timeframe-chart-wrapper {
-  width: 100%; /* Ensures the wrapper spans the available area in main-content */
-}
-
-.timeframe-chart-wrapper .chart-container {
-  /* Override Dashboard.css .chart-container styling for items in a flex row */
-  flex: none; /* It's not a flex item in this context */
-  
-  /* Override margins from both Dashboard.css .chart-container (margin: 0 10px) 
-     and SharedStyles.css .chart-container (margin: 20px 0).
-     This provides 20px top/bottom margin and centers the chart horizontally. */
-  margin: 20px auto; 
-  
-  /* Set desired max-width. This overrides max-width: 48% from Dashboard.css .chart-container
-     and max-width: 80% from SharedStyles.css .chart-container.
-     96% approximates the width of two standard charts (2 * 48%). */
-  max-width: 96%; 
-  
-  /* Note: Other relevant properties like:
-     - padding, background-color, border-radius, box-shadow (from SharedStyles.css .chart-container)
-     - min-width, box-sizing (from Dashboard.css .chart-container)
-     - width: calc(100% - 40px) (from SharedStyles.css .chart-container)
-     will still apply and work correctly with these overrides. */
-}
