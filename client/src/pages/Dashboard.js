@@ -145,29 +145,57 @@ function Dashboard() {
 
       // Calculate activity over the entire timeframe by day
       const timeframeCounts = {};
+      // Calculate distinct users over the entire timeframe by day
+      const distinctUsersPerDayCounts = {};
+
       csvData.originalData.forEach(row => {
         const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
+        const user = row['Kasutaja täisnimi'];
+
         if (date.isValid()) {
           const dateString = date.format('YYYY-MM-DD');
+          // Count total events
           if (!timeframeCounts[dateString]) {
             timeframeCounts[dateString] = 0;
           }
           timeframeCounts[dateString]++;
+
+          // Count distinct users
+          if (user) {
+            if (!distinctUsersPerDayCounts[dateString]) {
+              distinctUsersPerDayCounts[dateString] = new Set();
+            }
+            distinctUsersPerDayCounts[dateString].add(user);
+          }
         }
       });
 
       const timeframeLabels = Object.keys(timeframeCounts).sort();
-      const timeframeDataPoints = timeframeLabels.map(label => timeframeCounts[label]);
+      const eventDataPoints = timeframeLabels.map(label => timeframeCounts[label]);
+      const distinctUsersDataPoints = timeframeLabels.map(label => 
+        distinctUsersPerDayCounts[label] ? distinctUsersPerDayCounts[label].size : 0
+      );
 
       setTimeframeData({
         labels: timeframeLabels,
         datasets: [
           {
             label: 'Events Over Timeframe',
-            data: timeframeDataPoints,
+            data: eventDataPoints,
             fill: false,
-            backgroundColor: '#3e95cd',
-            borderColor: '#3e95cd',
+            backgroundColor: '#4BC0C0',
+            borderColor: '#4BC0C0',
+            yAxisID: 'yEvents',
+            type: 'line',
+          },
+          {
+            label: 'Distinct Users Over Timeframe',
+            data: distinctUsersDataPoints,
+            fill: false,
+            backgroundColor: '#FF9F40',
+            borderColor: '#FF9F40',
+            yAxisID: 'yUsers',
+            type: 'bar',
           },
         ],
       });
@@ -246,14 +274,41 @@ function Dashboard() {
             />
           )}
         </div>
-        {/* 3) Timeframe Line */}
+        {/* 3) Timeframe Line - Combined Activity and Distinct Users */}
         {timeframeData.labels?.length > 0 && (
-          <ChartWithMenu
-            ChartComponent={Line}
-            data={timeframeData}
-            filename="activity-timeframe"
-            title="Activity Over Timeframe"
-          />
+          <div className="timeframe-chart-wrapper">
+            <ChartWithMenu
+              ChartComponent={Line}
+              data={timeframeData}
+              filename="activity-and-users-timeframe"
+              title="Events and Distinct Users Over Timeframe"
+              options={{
+                scales: {
+                  yEvents: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                      display: true,
+                      text: 'Number of Events'
+                    }
+                  },
+                  yUsers: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                      display: true,
+                      text: 'Number of Distinct Users'
+                    },
+                    grid: {
+                      drawOnChartArea: false,
+                    },
+                  }
+                }
+              }}
+            />
+          </div>
         )}
         <div className="chart-row">
           {/* 4) Top Users Bar */}

@@ -7,6 +7,11 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { useCsv } from './context/CsvContext';
 import { useCsvData } from './context/CsvDataContext';
 import dayjs from 'dayjs';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+import isoWeek from 'dayjs/plugin/isoWeek';
+
+dayjs.extend(weekOfYear);
+dayjs.extend(isoWeek);
 
 function LandingPage() {
   const [file, setFile] = useState(null);
@@ -51,6 +56,34 @@ function LandingPage() {
     } else {
       alert('Please select a valid CSV file.');
     }
+  };
+
+  const handleSetTimeframe = (start, end) => {
+    setStartDate(start.toDate());
+    setEndDate(end.toDate());
+  };
+
+  const setThisWeek = () => {
+    handleSetTimeframe(dayjs().startOf('isoWeek'), dayjs().endOf('day'));
+  };
+
+  const setLastWeek = () => {
+    const lastWeekStart = dayjs().subtract(1, 'week').startOf('isoWeek');
+    const lastWeekEnd = dayjs().subtract(1, 'week').endOf('isoWeek');
+    handleSetTimeframe(lastWeekStart, lastWeekEnd);
+  };
+
+  const setThisMonth = () => {
+    handleSetTimeframe(dayjs().startOf('month'), dayjs().endOf('day'));
+  };
+
+  const setLast30Days = () => {
+    handleSetTimeframe(dayjs().subtract(30, 'days').startOf('day'), dayjs().endOf('day'));
+  };
+
+  const handleResetDates = () => {
+    setStartDate(null);
+    setEndDate(null);
   };
 
   const handleProcessStart = () => {
@@ -101,7 +134,6 @@ function LandingPage() {
               <li>Navigate to the course you want to analyze</li>
               <li>In the administration block, click on "Reports"</li>
               <li>Select "Logs" from the dropdown menu</li>
-              <li>Set your desired filters (users, activities, time period, etc.)</li>
               <li>At the bottom of the page, click "Download" and select "CSV format"</li>
               <li>Upload the downloaded CSV file here for analysis</li>
             </ol>
@@ -124,25 +156,34 @@ function LandingPage() {
         style={{ display: 'none' }}
         onChange={handleFileChange}
       />
-      <div className="date-picker">
-        <DatePicker
-          selected={startDate}
-          onChange={(date) => setStartDate(date)}
-          selectsStart
-          startDate={startDate}
-          endDate={endDate}
-          placeholderText="Start Date"
-        />
-        <DatePicker
-          selected={endDate}
-          onChange={(date) => setEndDate(date)}
-          selectsEnd
-          startDate={startDate}
-          endDate={endDate}
-          placeholderText="End Date"
-        />
+      <div className="date-selectors-container">
+        <div className="quick-select-buttons">
+          <button onClick={setThisWeek}>This Week</button>
+          <button onClick={setLastWeek}>Last Week</button>
+          <button onClick={setThisMonth}>This Month</button>
+          <button onClick={setLast30Days}>Last 30 Days</button>
+          <button onClick={handleResetDates} className="reset-dates-button">Clear Dates</button>
+        </div>
+        <div className="date-picker">
+          <DatePicker
+            selected={startDate}
+            onChange={(date) => setStartDate(date)}
+            selectsStart
+            startDate={startDate}
+            endDate={endDate}
+            placeholderText="Start Date"
+          />
+          <DatePicker
+            selected={endDate}
+            onChange={(date) => setEndDate(date)}
+            selectsEnd
+            startDate={startDate}
+            endDate={endDate}
+            placeholderText="End Date"
+          />
+        </div>
       </div>
-      <button onClick={handleProcessStart}>Start Processing</button>
+      <button onClick={handleProcessStart} className="process-button">Start Processing</button>
     </div>
   );
 }

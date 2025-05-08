@@ -50,11 +50,59 @@ body {
   color: #f8f8f8;
 }
 
+.date-selectors-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 600px; /* Match drop-zone width */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.quick-select-buttons {
+  display: flex;
+  flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.quick-select-buttons button {
+  background-color: #073a4b; /* Dark blue to match drop-zone */
+  color: #f8f8f8; /* Light text */
+  border: 1px solid #0a4d64; /* Slightly lighter border */
+  border-radius: 5px;
+  padding: 8px 15px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s, border-color 0.3s;
+  font-family: 'Poppins', sans-serif; /* Consistent font */
+}
+
+.quick-select-buttons button:hover {
+  background-color: #0a4d64; /* Lighter blue on hover */
+  border-color: #f78c6a; /* Accent color border on hover */
+}
+
+.reset-dates-button {
+  background-color: #6c757d; /* A neutral grey color */
+  border-color: #5a6268;
+}
+
+.reset-dates-button:hover {
+  background-color: #5a6268;
+  border-color: #f04770; /* Accent color on hover for consistency */
+}
+
 .date-picker {
   display: flex;
   justify-content: center;
   gap: 10px;
   margin-bottom: 20px;
+  font-weight: 600;
 }
 
 .react-datepicker-wrapper,
@@ -94,6 +142,23 @@ body {
 
 .landing-page button:hover {
   background-color: #f78c6a;
+}
+
+.landing-page .process-button {
+  margin-top: 10px;
+  background-color: #28a745; /* Green color */
+  color: #ffffff;
+  padding: 12px 24px; /* Increased padding for a larger button */
+  font-size: 1.1rem; /* Slightly larger font */
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.landing-page .process-button:hover {
+  background-color: #218838; /* Darker green on hover */
 }
 
 .explanation-box {
