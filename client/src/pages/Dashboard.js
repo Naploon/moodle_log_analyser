@@ -147,32 +147,71 @@ function Dashboard() {
       const timeframeCounts = {};
       const distinctUsersPerDayCounts = {};
 
+      // First determine the date range to display
+      let startDateObj, endDateObj;
+
+      // Use the timeframe from context if available
+      if (timeframe.startDate && timeframe.endDate) {
+        // Both start and end dates are specified in the timeframe
+        startDateObj = dayjs(timeframe.startDate);
+        endDateObj = dayjs(timeframe.endDate);
+      } else {
+        // Find the first and last activity dates in the data
+        const allEntryDates = csvData.originalData
+          .map(row => dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss'))
+          .filter(date => date.isValid());
+        
+        // Sort dates chronologically
+        allEntryDates.sort((a, b) => a - b);
+        
+        if (allEntryDates.length > 0) {
+          // If timeframe.startDate is set, use it; otherwise use first entry date
+          startDateObj = timeframe.startDate ? dayjs(timeframe.startDate) : allEntryDates[0];
+          
+          // If timeframe.endDate is set, use it; otherwise use last entry date
+          endDateObj = timeframe.endDate ? dayjs(timeframe.endDate) : allEntryDates[allEntryDates.length - 1];
+        } else {
+          // Fallback if no valid dates (rare case)
+          startDateObj = dayjs().subtract(30, 'days');
+          endDateObj = dayjs();
+        }
+      }
+
+      // Initialize all days in the range with zero counts
+      let currentDate = startDateObj;
+      while (currentDate.isSameOrBefore(endDateObj, 'day')) {
+        const dateString = currentDate.format('YYYY-MM-DD');
+        timeframeCounts[dateString] = 0;
+        distinctUsersPerDayCounts[dateString] = new Set();
+        currentDate = currentDate.add(1, 'day');
+      }
+
+      // Now populate the actual data
       csvData.originalData.forEach(row => {
         const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
         const user = row['Kasutaja täisnimi'];
 
         if (date.isValid()) {
           const dateString = date.format('YYYY-MM-DD');
-          // Count total events
-          if (!timeframeCounts[dateString]) {
-            timeframeCounts[dateString] = 0;
-          }
-          timeframeCounts[dateString]++;
+          
+          // Only count if the date is within our display range
+          if (date.isSameOrAfter(startDateObj, 'day') && date.isSameOrBefore(endDateObj, 'day')) {
+            // Count total events (will add to the initialized zero)
+            timeframeCounts[dateString]++;
 
-          // Count distinct users
-          if (user) {
-            if (!distinctUsersPerDayCounts[dateString]) {
-              distinctUsersPerDayCounts[dateString] = new Set();
+            // Add user to the set of distinct users for this day
+            if (user) {
+              distinctUsersPerDayCounts[dateString].add(user);
             }
-            distinctUsersPerDayCounts[dateString].add(user);
           }
         }
       });
 
+      // The rest remains the same - using the complete set of days as labels
       const timeframeLabels = Object.keys(timeframeCounts).sort();
       const eventDataPoints = timeframeLabels.map(label => timeframeCounts[label]);
       const distinctUsersDataPoints = timeframeLabels.map(label => 
-        distinctUsersPerDayCounts[label] ? distinctUsersPerDayCounts[label].size : 0
+        distinctUsersPerDayCounts[label].size
       );
 
       setTimeframeData({

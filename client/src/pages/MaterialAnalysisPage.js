@@ -4,19 +4,21 @@ import { useCsvData } from '../context/CsvDataContext';
 import { Line, Bar } from 'react-chartjs-2';
 import ChartWithMenu from '../components/ChartWithMenu';
 import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import './SharedStyles.css';
 import './UserPage.css'; // For search bar styles
 
-// Chart.js and plugins are registered globally or in App.js/index.js
-// If not, ensure Chart.register for scales, elements, title, tooltip, legend is done.
-// The whiteBackground plugin might also need to be registered if it's not global.
-// For this example, assuming necessary Chart.js parts are registered elsewhere or 
-// ChartWithMenu handles its own registrations.
+// Extend dayjs with plugins
+dayjs.extend(customParseFormat);
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isSameOrAfter);
 
 const MATERIAL_COMPONENTS = ['Fail', 'Viki', 'URL', 'Leht'];
 
 function MaterialAnalysisPage() {
-  const { csvData } = useCsvData();
+  const { csvData, timeframe } = useCsvData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredMaterialContexts, setFilteredMaterialContexts] = useState([]);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -125,31 +127,87 @@ function MaterialAnalysisPage() {
     // Timeframe Chart Data (Activity & Distinct Users)
     const timeframeCounts = {};
     const distinctUsersPerDay = {};
+    
+    // First determine the date range to display
+    let startDateObj, endDateObj;
+    
+    // Use the timeframe from context if available
+    if (timeframe.startDate && timeframe.endDate) {
+      // Both start and end dates are specified in the timeframe
+      startDateObj = dayjs(timeframe.startDate);
+      endDateObj = dayjs(timeframe.endDate);
+    } else {
+      // Find the first and last activity dates for this material
+      const materialEntryDates = materialEntries.map(entry => 
+        dayjs(entry['Aeg'], 'D/M/YY, HH:mm:ss')
+      ).filter(date => date.isValid());
+      
+      // Sort dates chronologically
+      materialEntryDates.sort((a, b) => a - b);
+      
+      if (materialEntryDates.length > 0) {
+        // If timeframe.startDate is set, use it; otherwise use first entry date
+        startDateObj = timeframe.startDate ? dayjs(timeframe.startDate) : materialEntryDates[0];
+        
+        // If timeframe.endDate is set, use it; otherwise use last entry date
+        endDateObj = timeframe.endDate ? dayjs(timeframe.endDate) : materialEntryDates[materialEntryDates.length - 1];
+      } else {
+        // Fallback if no valid dates (rare case)
+        startDateObj = dayjs().subtract(30, 'days');
+        endDateObj = dayjs();
+      }
+    }
+
+    // Initialize all days in the range with zero counts
+    let currentDate = startDateObj;
+    while (currentDate.isSameOrBefore(endDateObj, 'day')) {
+      const dateString = currentDate.format('YYYY-MM-DD');
+      timeframeCounts[dateString] = 0;
+      distinctUsersPerDay[dateString] = new Set();
+      currentDate = currentDate.add(1, 'day');
+    }
+
+    // Now populate the actual data
     materialEntries.forEach(row => {
       const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
       const user = row['Kasutaja täisnimi'];
       if (date.isValid()) {
         const dateString = date.format('YYYY-MM-DD');
-        timeframeCounts[dateString] = (timeframeCounts[dateString] || 0) + 1;
-        if (user) {
-          if (!distinctUsersPerDay[dateString]) distinctUsersPerDay[dateString] = new Set();
-          distinctUsersPerDay[dateString].add(user);
+        
+        // Only count if the date is within our display range
+        if (date.isSameOrAfter(startDateObj, 'day') && date.isSameOrBefore(endDateObj, 'day')) {
+          // Count total material interactions
+          timeframeCounts[dateString]++;
+          
+          if (user) {
+            distinctUsersPerDay[dateString].add(user);
+          }
         }
       }
     });
+
     const timeframeLabels = Object.keys(timeframeCounts).sort();
+    
     setMaterialTimeframeData({
       labels: timeframeLabels,
       datasets: [
         {
-          label: 'Total Material Interactions', data: timeframeLabels.map(l => timeframeCounts[l]),
-          fill: false, backgroundColor: '#4BC0C0', borderColor: '#4BC0C0',
-          yAxisID: 'yInteractions', type: 'line',
+          label: 'Total Material Interactions', 
+          data: timeframeLabels.map(l => timeframeCounts[l]),
+          fill: false, 
+          backgroundColor: '#4BC0C0', 
+          borderColor: '#4BC0C0',
+          yAxisID: 'yInteractions', 
+          type: 'line',
         },
         {
-          label: 'Distinct Users for Material', data: timeframeLabels.map(l => distinctUsersPerDay[l]?.size || 0),
-          fill: false, backgroundColor: '#FF9F40', borderColor: '#FF9F40',
-          yAxisID: 'yUsers', type: 'bar',
+          label: 'Distinct Users for Material', 
+          data: timeframeLabels.map(l => distinctUsersPerDay[l].size),
+          fill: false, 
+          backgroundColor: '#FF9F40', 
+          borderColor: '#FF9F40',
+          yAxisID: 'yUsers', 
+          type: 'bar',
         },
       ],
     });

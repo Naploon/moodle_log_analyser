@@ -7,15 +7,21 @@ import { Line, Pie, Bar } from 'react-chartjs-2';
 import ChartWithMenu from '../components/ChartWithMenu';
 import './UserPage.css';
 
-//introduce dayjs & the parser plugin
+//introduce dayjs & the plugins
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+
+// Extend dayjs with the plugins
 dayjs.extend(customParseFormat);
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isSameOrAfter);
 
 function UserPage() {
   const navigate = useNavigate();
   const { isCsvUploaded } = useCsv();
-  const { csvData } = useCsvData();
+  const { csvData, timeframe } = useCsvData();
   const [uniqueUsers, setUniqueUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
@@ -191,26 +197,64 @@ function UserPage() {
 
     // Calculate activity over time (day interval) and distinct contexts per day
     const timeframeCounts = {};
-    const distinctContextsPerDay = {}; // New: To store sets of contexts per day
+    const distinctContextsPerDay = {}; // To store sets of contexts per day
 
+    // First determine the date range to display
+    let startDateObj, endDateObj;
+    
+    // Use the timeframe from the component's top level
+    if (timeframe.startDate && timeframe.endDate) {
+      // Both start and end dates are specified in the timeframe
+      startDateObj = dayjs(timeframe.startDate);
+      endDateObj = dayjs(timeframe.endDate);
+    } else {
+      // Find the first and last activity dates for this user
+      const userEntryDates = userEntries.map(entry => 
+        dayjs(entry['Aeg'], 'D/M/YY, HH:mm:ss')
+      ).filter(date => date.isValid());
+      
+      // Sort dates chronologically
+      userEntryDates.sort((a, b) => a - b);
+      
+      if (userEntryDates.length > 0) {
+        // If timeframe.startDate is set, use it; otherwise use first entry date
+        startDateObj = timeframe.startDate ? dayjs(timeframe.startDate) : userEntryDates[0];
+        
+        // If timeframe.endDate is set, use it; otherwise use last entry date
+        endDateObj = timeframe.endDate ? dayjs(timeframe.endDate) : userEntryDates[userEntryDates.length - 1];
+      } else {
+        // Fallback if no valid dates (rare case)
+        startDateObj = dayjs().subtract(7, 'days');
+        endDateObj = dayjs();
+      }
+    }
+
+    // Initialize all days in the range with zero counts
+    let currentDate = startDateObj;
+    while (currentDate.isSameOrBefore(endDateObj, 'day')) {
+      const dateString = currentDate.format('YYYY-MM-DD');
+      timeframeCounts[dateString] = 0;
+      distinctContextsPerDay[dateString] = new Set();
+      currentDate = currentDate.add(1, 'day');
+    }
+
+    // Now populate the actual data
     userData.forEach(row => {
       const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
       const context = row['Sündmuse kontekst']; // Get the event context
 
       if (date.isValid()) {
         const dateString = date.format('YYYY-MM-DD');
-        // Count total activity
-        if (!timeframeCounts[dateString]) {
-          timeframeCounts[dateString] = 0;
-        }
-        timeframeCounts[dateString]++;
+        
+        // Only count if the date is within our display range
+        if (date.isSameOrAfter(startDateObj, 'day') && date.isSameOrBefore(endDateObj, 'day')) {
+          // Count total activity (increment the initialized zero)
+          timeframeCounts[dateString]++;
 
-        // Collect distinct contexts
-        if (context) {
-          if (!distinctContextsPerDay[dateString]) {
-            distinctContextsPerDay[dateString] = new Set();
+          // Collect distinct contexts
+          if (context) {
+            distinctContextsPerDay[dateString].add(context);
           }
-          distinctContextsPerDay[dateString].add(context);
         }
       }
     });
@@ -236,7 +280,7 @@ function UserPage() {
         {
           label: 'Distinct Contexts per Day',
           data: distinctContextsDataPoints,
-          backgroundColor: '#FF9F40', // Using an orange color, adjust as needed
+          backgroundColor: '#FF9F40', 
           borderColor: '#FF9F40',
           yAxisID: 'yContexts',
           type: 'bar',

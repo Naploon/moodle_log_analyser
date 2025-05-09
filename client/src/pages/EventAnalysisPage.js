@@ -4,6 +4,9 @@ import { useCsvData } from '../context/CsvDataContext';
 import { Line, Bar } from 'react-chartjs-2';
 import ChartWithMenu from '../components/ChartWithMenu';
 import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import './SharedStyles.css';
 import './UserPage.css'; // Import styles for the search bar
 import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
@@ -21,8 +24,13 @@ Chart.register({
   }
 });
 
+// Extend dayjs with plugins
+dayjs.extend(customParseFormat);
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isSameOrAfter);
+
 function EventAnalysisPage() {
-  const { csvData } = useCsvData();
+  const { csvData, timeframe } = useCsvData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -145,18 +153,61 @@ function EventAnalysisPage() {
     // Prepare data for the event-specific activity and distinct users over timeframe chart
     const timeframeCounts = {};
     const distinctUsersPerDayForEvent = {};
+    
+    // First determine the date range to display
+    let startDateObj, endDateObj;
+    
+    // Use the timeframe from context if available
+    if (timeframe.startDate && timeframe.endDate) {
+      // Both start and end dates are specified in the timeframe
+      startDateObj = dayjs(timeframe.startDate);
+      endDateObj = dayjs(timeframe.endDate);
+    } else {
+      // Find the first and last activity dates for this event
+      const eventEntryDates = eventEntries.map(entry => 
+        dayjs(entry['Aeg'], 'D/M/YY, HH:mm:ss')
+      ).filter(date => date.isValid());
+      
+      // Sort dates chronologically
+      eventEntryDates.sort((a, b) => a - b);
+      
+      if (eventEntryDates.length > 0) {
+        // If timeframe.startDate is set, use it; otherwise use first entry date
+        startDateObj = timeframe.startDate ? dayjs(timeframe.startDate) : eventEntryDates[0];
+        
+        // If timeframe.endDate is set, use it; otherwise use last entry date
+        endDateObj = timeframe.endDate ? dayjs(timeframe.endDate) : eventEntryDates[eventEntryDates.length - 1];
+      } else {
+        // Fallback if no valid dates (rare case)
+        startDateObj = dayjs().subtract(30, 'days');
+        endDateObj = dayjs();
+      }
+    }
+
+    // Initialize all days in the range with zero counts
+    let currentDate = startDateObj;
+    while (currentDate.isSameOrBefore(endDateObj, 'day')) {
+      const dateString = currentDate.format('YYYY-MM-DD');
+      timeframeCounts[dateString] = 0;
+      distinctUsersPerDayForEvent[dateString] = new Set();
+      currentDate = currentDate.add(1, 'day');
+    }
+
+    // Now populate the actual data
     eventEntries.forEach(row => {
       const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
       const user = row['Kasutaja täisnimi'];
       if (date.isValid()) {
         const dateString = date.format('YYYY-MM-DD');
-        timeframeCounts[dateString] = (timeframeCounts[dateString] || 0) + 1;
+        
+        // Only count if the date is within our display range
+        if (date.isSameOrAfter(startDateObj, 'day') && date.isSameOrBefore(endDateObj, 'day')) {
+          // Count total event occurrences
+          timeframeCounts[dateString]++;
 
-        if (user) {
-          if (!distinctUsersPerDayForEvent[dateString]) {
-            distinctUsersPerDayForEvent[dateString] = new Set();
+          if (user) {
+            distinctUsersPerDayForEvent[dateString].add(user);
           }
-          distinctUsersPerDayForEvent[dateString].add(user);
         }
       }
     });
@@ -164,7 +215,7 @@ function EventAnalysisPage() {
     const timeframeLabels = Object.keys(timeframeCounts).sort();
     const eventOccurrencesDataPoints = timeframeLabels.map(label => timeframeCounts[label]);
     const distinctUsersDataPoints = timeframeLabels.map(label =>
-      distinctUsersPerDayForEvent[label] ? distinctUsersPerDayForEvent[label].size : 0
+      distinctUsersPerDayForEvent[label].size
     );
 
     setEventTimeframeData({
