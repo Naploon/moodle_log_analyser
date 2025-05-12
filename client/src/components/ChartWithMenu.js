@@ -12,9 +12,9 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import '../pages/SharedStyles.css'; // for .chart-container, .unified-box, etc.
+import '../pages/SharedStyles.css';
 
-// register core elements and a white-background plugin just once
+
 Chart.register(
   CategoryScale,
   LinearScale,
@@ -38,11 +38,11 @@ Chart.register({
 });
 
 function ChartWithMenu({
-  ChartComponent,  // e.g. Line, Bar, Pie
+  ChartComponent,  
   data,
   options = {},
-  filename,        // base name for exports
-  title            // chart title
+  filename,        
+  title           
 }) {
   const ref = useRef(null);
 

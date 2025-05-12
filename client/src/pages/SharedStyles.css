@@ -9,7 +9,7 @@
 }
 
 .chart-container {
-  position: relative;    /* allow absolute-positioned export button */
+  position: relative;    
   width: calc(100% - 40px);
   max-width: 80%;
   margin: 20px 0;
@@ -30,7 +30,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: calc(100% - 200px); /* Ensure full width minus sidebar */
+  width: calc(100% - 200px); 
 }
 
 .page-title {
@@ -67,8 +67,8 @@
 
 .metrics-container {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* Three columns */
-  gap: 20px; /* Space between boxes */
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 20px; 
   margin-bottom: 20px;
   width: 100%;
 }
@@ -76,9 +76,28 @@
 .chart-row {
   display: flex;
   justify-content: space-between;
-  gap: 20px; /* Add space between the charts */
+  gap: 20px; 
   margin-bottom: 20px;
-  width: 100%; /* Ensure full width */
+  width: 100%; 
+}
+
+.chart-row > .chart-container {
+  flex-grow: 1;
+  flex-basis: 0; 
+
+}
+
+
+.chart-row > .zero-interaction-users-box {
+  flex-grow: 1;
+  flex-basis: 0;
+  
+  box-sizing: border-box;
+}
+
+
+.zero-interaction-users-box {
+  position: relative;
 }
 
 /* tiny export-png button */
@@ -96,7 +115,7 @@
   z-index: 10;
 }
 
-/* Styles for the full-width timeframe chart */
+
 .timeframe-chart-wrapper {
   width: 100%; 
 }

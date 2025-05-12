@@ -21,9 +21,9 @@
   position: relative;
   flex: 1;
   margin: 0 10px;
-  max-width: 48%; /* Adjust this to control the width of each chart */
-  min-width: 300px; /* Ensure a minimum width for better visibility */
-  box-sizing: border-box; /* Include padding and border in element's total width and height */
+  max-width: 48%; 
+  min-width: 300px; 
+  box-sizing: border-box; 
 }
 
 .unified-box {

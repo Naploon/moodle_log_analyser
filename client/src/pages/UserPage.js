@@ -7,13 +7,11 @@ import { Line, Pie, Bar } from 'react-chartjs-2';
 import ChartWithMenu from '../components/ChartWithMenu';
 import './UserPage.css';
 
-//introduce dayjs & the plugins
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 
-// Extend dayjs with the plugins
 dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
@@ -37,7 +35,6 @@ function UserPage() {
   const [userTimeframeData, setUserTimeframeData] = useState({});
   const [contextBarData, setContextBarData] = useState([]);
 
-  // palette for each "komponent" chart
   const COMPONENT_COLORS = [
     '#FF6384', '#36A2EB', '#FFCE56',
     '#4BC0C0', '#9966FF', '#FF9F40'
@@ -45,7 +42,7 @@ function UserPage() {
 
   useEffect(() => {
     if (!isCsvUploaded) {
-      navigate('/'); // Redirect to landing page if no CSV is uploaded
+      navigate('/');
     }
   }, [isCsvUploaded, navigate]);
 
@@ -54,7 +51,6 @@ function UserPage() {
       const users = Array.from(new Set(csvData.originalData.map(row => row['Kasutaja täisnimi'] || '')));
       setUniqueUsers(users.filter(user => user));
 
-      // Load the last selected user from localStorage
       const lastSelectedUser = localStorage.getItem('lastSelectedUser');
       if (lastSelectedUser && users.includes(lastSelectedUser)) {
         handleUserSelect(lastSelectedUser);
@@ -64,30 +60,27 @@ function UserPage() {
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
-    setIsDropdownVisible(true); // Show dropdown when typing
+    setIsDropdownVisible(true);
   };
 
   const handleUserSelect = (user) => {
     setSelectedUser(user);
     setSearchTerm(user);
-    setIsDropdownVisible(false); // Hide dropdown when a user is selected
+    setIsDropdownVisible(false);
 
-    // Save the selected user to localStorage
     localStorage.setItem('lastSelectedUser', user);
 
     const userEntries = csvData.originalData.filter(row => row['Kasutaja täisnimi'] === user);
     setUserActivity(userEntries.length);
 
-    // 1) Filter down to file‐submission & test events
     const submissionEvents = userEntries.filter(entry =>
       entry['Komponent'] === 'Faili esitamine' || entry['Komponent'] === 'Test'
     );
-    // 2) Count distinct contexts for this user
+
     const distinctSubmissionContexts = new Set(
       submissionEvents.map(entry => entry['Sündmuse kontekst'])
     ).size;
 
-    // 3) Compute total distinct contexts across all users
     const totalPossibleContexts = Array.from(new Set(
       csvData.originalData
         .filter(entry =>
@@ -97,31 +90,26 @@ function UserPage() {
         .map(entry => entry['Sündmuse kontekst'])
     )).length;
 
-    // 4) Normalize and multiply by 100
     const normalizedScore = totalPossibleContexts > 0
       ? (distinctSubmissionContexts / totalPossibleContexts) * 100
       : 0;
     setSubmissionEngagementScore(normalizedScore);
 
-    // Calculate average daily activities
     const dates = userEntries.map(row => dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss').format('YYYY-MM-DD'));
     const uniqueDates = new Set(dates);
     setAverageDailyActivities(userEntries.length / uniqueDates.size);
 
-    // Find the last activity timestamp
     const lastActivity = userEntries.reduce((latest, entry) => {
       const entryDate = dayjs(entry['Aeg'], 'D/M/YY, HH:mm:ss');
       return entryDate.isValid() && entryDate.isAfter(latest) ? entryDate : latest;
     }, dayjs(0));
 
-    // Check if the date is valid
     if (lastActivity.isValid()) {
       setLastActivityTimestamp(lastActivity.format('D/M/YYYY HH:mm:ss'));
     } else {
       setLastActivityTimestamp('Invalid Date');
     }
 
-    // Prepare data for the user-specific activity chart
     const activityByHour = {};
     userEntries.forEach(entry => {
       const hour = dayjs(entry['Aeg'], 'D/M/YY, HH:mm:ss').format('HH:00');
@@ -147,7 +135,6 @@ function UserPage() {
       ],
     });
 
-    // Prepare data for the component distribution pie chart
     const componentCounts = {};
     userEntries.forEach(entry => {
       const component = entry['Komponent'];
@@ -170,16 +157,14 @@ function UserPage() {
       ],
     });
 
-    // Filter data for the selected user
     const userData = csvData.originalData.filter(row => row['Kasutaja täisnimi'] === user);
 
-    // Calculate activity by day of the week for the user
-    const dayOfWeekCounts = Array(7).fill(0); // Initialize array for each day of the week
+    const dayOfWeekCounts = Array(7).fill(0); 
 
     userData.forEach(row => {
       const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
       if (date.isValid()) {
-        const dayOfWeek = date.day(); // Get day of the week (0 = Sunday, 6 = Saturday)
+        const dayOfWeek = date.day(); 
         dayOfWeekCounts[dayOfWeek]++;
       }
     });
@@ -195,32 +180,29 @@ function UserPage() {
       ],
     });
 
-    // Calculate activity over time (day interval) and distinct contexts per day
+    
     const timeframeCounts = {};
-    const distinctContextsPerDay = {}; // To store sets of contexts per day
+    const distinctContextsPerDay = {}; 
 
-    // First determine the date range to display
+  
     let startDateObj, endDateObj;
     
-    // Use the timeframe from the component's top level
+    
     if (timeframe.startDate && timeframe.endDate) {
-      // Both start and end dates are specified in the timeframe
+      
       startDateObj = dayjs(timeframe.startDate);
       endDateObj = dayjs(timeframe.endDate);
     } else {
-      // Find the first and last activity dates for this user
+
       const userEntryDates = userEntries.map(entry => 
         dayjs(entry['Aeg'], 'D/M/YY, HH:mm:ss')
       ).filter(date => date.isValid());
       
-      // Sort dates chronologically
       userEntryDates.sort((a, b) => a - b);
       
       if (userEntryDates.length > 0) {
-        // If timeframe.startDate is set, use it; otherwise use first entry date
         startDateObj = timeframe.startDate ? dayjs(timeframe.startDate) : userEntryDates[0];
         
-        // If timeframe.endDate is set, use it; otherwise use last entry date
         endDateObj = timeframe.endDate ? dayjs(timeframe.endDate) : userEntryDates[userEntryDates.length - 1];
       } else {
         // Fallback if no valid dates (rare case)
@@ -229,7 +211,6 @@ function UserPage() {
       }
     }
 
-    // Initialize all days in the range with zero counts
     let currentDate = startDateObj;
     while (currentDate.isSameOrBefore(endDateObj, 'day')) {
       const dateString = currentDate.format('YYYY-MM-DD');
@@ -238,20 +219,17 @@ function UserPage() {
       currentDate = currentDate.add(1, 'day');
     }
 
-    // Now populate the actual data
+    
     userData.forEach(row => {
       const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
-      const context = row['Sündmuse kontekst']; // Get the event context
+      const context = row['Sündmuse kontekst']; 
 
       if (date.isValid()) {
         const dateString = date.format('YYYY-MM-DD');
         
-        // Only count if the date is within our display range
         if (date.isSameOrAfter(startDateObj, 'day') && date.isSameOrBefore(endDateObj, 'day')) {
-          // Count total activity (increment the initialized zero)
           timeframeCounts[dateString]++;
 
-          // Collect distinct contexts
           if (context) {
             distinctContextsPerDay[dateString].add(context);
           }
@@ -288,9 +266,7 @@ function UserPage() {
       ],
     });
 
-    // Function to create context bar data for a given component
     const createContextBarData = (componentName, idx) => {
-      // 1) Gather all possible contexts for this component from the full CSV
       const allContexts = Array.from(
         new Set(
           csvData.originalData
@@ -299,13 +275,11 @@ function UserPage() {
         )
       );
 
-      // 2) Initialize every context's count to zero
       const contextCounts = allContexts.reduce((acc, ctx) => {
         acc[ctx] = 0;
         return acc;
       }, {});
 
-      // 3) Tally up only the user's entries
       userData.forEach(entry => {
         if (entry['Komponent'] === componentName) {
           contextCounts[entry['Sündmuse kontekst']]++;
@@ -324,7 +298,6 @@ function UserPage() {
       };
     };
 
-    // Generate context bar data for each unique component
     const uniqueComponents = [...new Set(userData.map(e => e['Komponent']))]
       .filter(component => component !== 'Süsteem');
     const allContextBarData = uniqueComponents
@@ -332,22 +305,22 @@ function UserPage() {
 
     setContextBarData(allContextBarData);
 
-    // —— MATERIAL ENGAGEMENT ——
-    // 1) Filter down to material components
+ 
     const materialEvents = userEntries.filter(entry =>
       ['Fail', 'Viki', 'URL', 'Leht'].includes(entry['Komponent'])
     );
-    // 2) Count distinct material contexts for this user
+
     const distinctMaterialContexts = new Set(
       materialEvents.map(entry => entry['Sündmuse kontekst'])
     ).size;
-    // 3) Compute total possible material contexts across all data
+
     const totalPossibleMaterialContexts = Array.from(new Set(
       csvData.originalData
         .filter(entry => ['Fail', 'Viki', 'URL', 'Leht'].includes(entry['Komponent']))
         .map(entry => entry['Sündmuse kontekst'])
     )).length;
-    // 4) Normalize & store as percentage
+    
+   
     const normalizedMaterial = totalPossibleMaterialContexts > 0
       ? (distinctMaterialContexts / totalPossibleMaterialContexts) * 100
       : 0;
@@ -355,7 +328,7 @@ function UserPage() {
   };
 
   const handleBlur = () => {
-    setTimeout(() => setIsDropdownVisible(false), 100); // Delay to allow click event to register
+    setTimeout(() => setIsDropdownVisible(false), 100); 
   };
 
   const filteredUsers = uniqueUsers.filter(user => user.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -371,7 +344,7 @@ function UserPage() {
             placeholder="Search for a user..."
             value={searchTerm}
             onChange={handleSearchChange}
-            onFocus={() => setIsDropdownVisible(true)} // Show dropdown on focus
+            onFocus={() => setIsDropdownVisible(true)} 
             onBlur={handleBlur}
             className="user-search-input"
           />
@@ -381,7 +354,7 @@ function UserPage() {
                 <div
                   key={user}
                   className={`user-option ${user === selectedUser ? 'selected' : ''}`}
-                  onMouseDown={() => handleUserSelect(user)} // Use onMouseDown to handle selection
+                  onMouseDown={() => handleUserSelect(user)} 
                 >
                   {user}
                 </div>
@@ -476,23 +449,50 @@ function UserPage() {
                   plugins: {
                     legend: {
                       position: 'right'
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const label = context.label || '';
+                          const value = context.parsed;
+                          
+                          const data = context.dataset && Array.isArray(context.dataset.data) ? context.dataset.data : [];
+                          const total = data.reduce((a, b) => {
+                            const numA = Number(a);
+                            const numB = Number(b);
+                            return (isNaN(numA) ? 0 : numA) + (isNaN(numB) ? 0 : numB);
+                          }, 0);
+                          const percentage = total > 0 ? ((value / total) * 100).toFixed(2) + '%' : '0.00%';
+                          return `${label}: ${percentage}`;
+                        }
+                      }
                     }
                   }
                 }}
               />
             )}
-            <div className="chart-row">
-              {contextBarData.map((cfg, idx) => (
-                <ChartWithMenu
-                  key={idx}
-                  ChartComponent={Bar}
-                  data={cfg}
-                  filename={`user-context-${cfg.datasets[0].label}`}
-                  title={cfg.datasets[0].label}
-                  options={{ indexAxis: 'y', scales: { x: { beginAtZero: true } } }}
-                />
-              ))}
-            </div>
+            {contextBarData.length > 0 && <h2 className="page-title">Context Distribution by Component</h2>}
+            {contextBarData.reduce((rows, chartConfig, index) => {
+              if (index % 2 === 0) {
+                rows.push([]);
+              }
+
+              rows[rows.length - 1].push(chartConfig);
+              return rows;
+            }, []).map((rowItems, rowIndex) => (
+              <div key={rowIndex} className="chart-row">
+                {rowItems.map((cfg, itemIndex) => (
+                  <ChartWithMenu
+                    key={`${rowIndex}-${itemIndex}`}
+                    ChartComponent={Bar}
+                    data={cfg}
+                    filename={`user-context-${cfg.datasets[0].label}`}
+                    title={cfg.datasets[0].label}
+                    options={{ indexAxis: 'y', scales: { x: { beginAtZero: true } } }}
+                  />
+                ))}
+              </div>
+            ))}
           </>
         )}
       </div>

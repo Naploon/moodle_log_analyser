@@ -4,7 +4,7 @@ import customParseFormat from 'dayjs/plugin/customParseFormat';
 
 dayjs.extend(customParseFormat);
 
-// Function to parse CSV file and execute a callback when done
+
 export function parseCSV(file, onComplete, onError) {
   Papa.parse(file, {
     header: true,
@@ -31,35 +31,35 @@ export function parseCSV(file, onComplete, onError) {
   });
 }
 
-// Function to process parsed data
+
 export function processCSVData(data) {
   const eventCounts = {};
   let validCount = 0;
   let invalidCount = 0;
 
   data.forEach(row => {
-    let timestamp = row['Aeg']; // Assuming 'Aeg' is the timestamp column
+    let timestamp = row['Aeg']; 
 
-    // Trim whitespace
+    
     if (timestamp) {
       timestamp = timestamp.trim();
     }
 
-    // Check for null or empty values
+    
     if (!timestamp) {
       invalidCount++;
       return;
     }
 
-    // Try parsing with both formats
-    let date = dayjs(timestamp, 'D/M/YY, HH:mm:ss'); // Adjust format to handle single-digit day/month
+    
+    let date = dayjs(timestamp, 'D/M/YY, HH:mm:ss'); 
     if (!date.isValid()) {
       date = dayjs(timestamp, 'YYYY-MM-DD HH:mm:ss');
     }
 
     if (date.isValid()) {
       validCount++;
-      const hour = date.format('HH:00'); // Group by hour
+      const hour = date.format('HH:00'); 
       if (!eventCounts[hour]) {
         eventCounts[hour] = 0;
       }
@@ -75,13 +75,17 @@ export function processCSVData(data) {
   return eventCounts;
 }
 
-// Function to count distinct users
+
 export function countDistinctUsers(data) {
-  const userSet = new Set(data.map(row => row['Kasutaja täisnimi']));
+  
+  const userSet = new Set(data
+    .map(row => row['Kasutaja täisnimi'])
+    .filter(user => user) 
+  );
   return userSet.size;
 }
 
-// Function to count distinct "Sündmuse kontekst" for a given "Komponent"
+
 function countDistinctContextsForComponent(data, component) {
   const contextSet = new Set(
     data
@@ -106,7 +110,7 @@ export function calculateMetrics(data) {
 }
 
 export function filterDataByTimeframe(data, startDate, endDate) {
-  // If neither boundary is provided, just return everything
+ 
   if (!startDate && !endDate) {
     return data;
   }
@@ -116,11 +120,11 @@ export function filterDataByTimeframe(data, startDate, endDate) {
     if (!date.isValid()) {
       return false;
     }
-    // if a startDate is set, drop anything before it
+    
     if (startDate && date.isBefore(startDate, 'day')) {
       return false;
     }
-    // if an endDate is set, drop anything after it
+   
     if (endDate && date.isAfter(endDate, 'day')) {
       return false;
     }

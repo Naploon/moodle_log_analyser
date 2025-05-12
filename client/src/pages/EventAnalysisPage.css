@@ -1,0 +1,38 @@
+.zero-interaction-users-box {
+  /* Specific styling for this box if needed, inherits from unified-box */
+  position: relative; /* Needed for absolute positioning of the button */
+}
+
+.user-table-container {
+  max-height: 450px; /* Increased height */
+  overflow-y: auto;
+  margin-top: 15px; /* Space between label and table */
+  border: 1px solid #eee; /* Light border around the scrollable area */
+  border-radius: 4px;
+}
+
+.zero-interaction-users-box table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.zero-interaction-users-box th,
+.zero-interaction-users-box td {
+  border-bottom: 1px solid #ddd; /* Horizontal lines for rows */
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.zero-interaction-users-box th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+  position: sticky; /* Make header sticky */
+  top: 0;            /* Stick to the top of the scrollable container */
+  z-index: 1;        /* Ensure header is above table content */
+}
+
+/* Optional: alternating row colors for better readability */
+.zero-interaction-users-box tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}

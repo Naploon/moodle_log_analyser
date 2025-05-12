@@ -13,7 +13,7 @@ root.render(
       <CsvDataProvider>
         <App />
       </CsvDataProvider>
-    </CsvProvider>
+    </CsvProvider> 
   </React.StrictMode>
 );
 

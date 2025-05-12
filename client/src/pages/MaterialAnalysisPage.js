@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import { useCsvData } from '../context/CsvDataContext';
 import { Line, Bar } from 'react-chartjs-2';
 import ChartWithMenu from '../components/ChartWithMenu';
+import TableMenu from '../components/TableMenu';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
@@ -36,7 +37,7 @@ function MaterialAnalysisPage() {
   const [materialTimeOfDayData, setMaterialTimeOfDayData] = useState({});
   const [materialDayOfWeekData, setMaterialDayOfWeekData] = useState({});
   const [topUsersForMaterialData, setTopUsersForMaterialData] = useState({});
-  const [bottomUsersForMaterialData, setBottomUsersForMaterialData] = useState({});
+  const [zeroInteractionUsersData, setZeroInteractionUsersData] = useState([]);
 
   useEffect(() => {
     if (csvData.originalData && csvData.originalData.length > 0) {
@@ -83,8 +84,24 @@ function MaterialAnalysisPage() {
       distinctUserCountForMaterial > 0 ? materialEntries.length / distinctUserCountForMaterial : 0
     );
 
-    const allUniqueUsersInDataset = Array.from(new Set(csvData.originalData.map(row => row['Kasutaja täisnimi']).filter(Boolean)));
-    const totalUniqueUserCount = allUniqueUsersInDataset.length;
+    // Get all unique users in the dataset and their last seen timestamp
+    const allUniqueUsersInDataset = new Set();
+    const latestUserTimestamps = {};
+    csvData.originalData.forEach(row => {
+      const user = row['Kasutaja täisnimi'];
+      const timestampStr = row['Aeg'];
+      if (user && timestampStr) {
+        allUniqueUsersInDataset.add(user);
+        const currentTimestamp = dayjs(timestampStr, 'D/M/YY, HH:mm:ss');
+        if (currentTimestamp.isValid()) {
+          if (!latestUserTimestamps[user] || currentTimestamp.isAfter(latestUserTimestamps[user])) {
+            latestUserTimestamps[user] = currentTimestamp;
+          }
+        }
+      }
+    });
+    const allUniqueUsersArray = Array.from(allUniqueUsersInDataset);
+    const totalUniqueUserCount = allUniqueUsersArray.length;
     
     setUsersNotInteractingWithMaterial(totalUniqueUserCount - distinctUserCountForMaterial);
     setMaterialActivityIndex(
@@ -231,18 +248,16 @@ function MaterialAnalysisPage() {
       }],
     });
 
-    const allUsersWithMaterialActivity = allUniqueUsersInDataset.map(user => ({
-      name: user,
-      count: userActivityForMaterial[user] || 0,
-    })).sort((a, b) => a.count - b.count || a.name.localeCompare(b.name));
-    setBottomUsersForMaterialData({
-      labels: allUsersWithMaterialActivity.slice(0, topN).map(u => u.name),
-      datasets: [{
-        label: `Bottom ${topN} Users for ${materialContext} (Incl. Zero)`,
-        data: allUsersWithMaterialActivity.slice(0, topN).map(u => u.count),
-        backgroundColor: '#f44336',
-      }],
-    });
+    // NEW: Calculate users with zero interactions for the table
+    const zeroInteractionUsers = allUniqueUsersArray
+      .filter(user => !usersWhoInteracted.has(user)) // Use usersWhoInteracted calculated earlier
+      .map(user => ({
+        name: user,
+        lastTimestamp: latestUserTimestamps[user] ? latestUserTimestamps[user].format('D/M/YY, HH:mm:ss') : 'N/A'
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by name
+
+    setZeroInteractionUsersData(zeroInteractionUsers);
   };
 
   const displayableMaterialContexts = filteredMaterialContexts.filter(context =>
@@ -356,14 +371,32 @@ function MaterialAnalysisPage() {
                   options={{ indexAxis: 'y', scales: { x: { beginAtZero: true } } }}
                 />
               )}
-              {bottomUsersForMaterialData.labels?.length > 0 && (
-                <ChartWithMenu
-                  ChartComponent={Bar}
-                  data={bottomUsersForMaterialData}
-                  filename={`${selectedMaterialContext.replace(/[\W_]+/g,"-")}-bottom-users`}
-                  title={`Bottom Users for "${selectedMaterialContext}"`}
-                  options={{ indexAxis: 'y', scales: { x: { beginAtZero: true } } }}
-                />
+              {zeroInteractionUsersData.length > 0 && (
+                <div className="metric-box unified-box zero-interaction-users-box">
+                  <TableMenu
+                    tableData={zeroInteractionUsersData}
+                    filenameBase={selectedMaterialContext}
+                  />
+                  <div className="metric-label">Users with 0 Interactions for "{selectedMaterialContext}"</div>
+                  <div className="user-table-container">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>User Name</th>
+                          <th>Last Activity Timestamp</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {zeroInteractionUsersData.map((user, index) => (
+                          <tr key={index}>
+                            <td>{user.name}</td>
+                            <td>{user.lastTimestamp}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
             </div>
           </>

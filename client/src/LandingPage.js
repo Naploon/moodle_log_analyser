@@ -132,9 +132,10 @@ function LandingPage() {
             <ol>
               <li>Log in to your Moodle course as an administrator or teacher</li>
               <li>Navigate to the course you want to analyze</li>
-              <li>In the administration block, click on "Reports"</li>
-              <li>Select "Logs" from the dropdown menu</li>
-              <li>At the bottom of the page, click "Download" and select "CSV format"</li>
+              <li>In the administration block, click on "Ülevaated"</li>
+              <li>Select "Logid" from the dropdown menu</li>
+              <li>Now you can do some prefiltering, but it's not required. Click "Too soovitud logid"</li>
+              <li>At the bottom of the page, select "Komaeraldusega fail (.csv)" and click "Laadi alla"</li>
               <li>Upload the downloaded CSV file here for analysis</li>
             </ol>
           </div>

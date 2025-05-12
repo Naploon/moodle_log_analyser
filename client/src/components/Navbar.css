@@ -87,7 +87,7 @@
   gap: 5px;
 }
 
-/* Scope navbar-specific date picker styles to prevent affecting landing page */
+
 .navbar .react-datepicker-wrapper {
   width: calc(50% - 2.5px);
   position: relative;
@@ -157,7 +157,6 @@
   border-radius: 2px;
 }
 
-/* Scope the background color changes */
 .navbar .react-datepicker-wrapper:nth-child(1):has(input:focus) input {
   background-color: #fff0eb;
 }
@@ -166,7 +165,7 @@
   background-color: #ebfaff;
 }
 
-/* Scope the scale transform */
+
 .navbar .react-datepicker-wrapper:has(input:focus) {
   transform: scale(1.03);
 }
@@ -212,14 +211,14 @@
   font-style: italic;
 }
 
-/* Enhance active/focus state with more distinct coloring */
+
 .react-datepicker__input-container input:focus {
   outline: none;
   border-color: #f78c6a;
   box-shadow: 0 0 0 2px rgba(247, 140, 106, 0.3);
-  background-color: #fff5f0; /* Light orange/peach background when active */
-  color: #073a4b; /* Darker text for contrast */
-  font-weight: 500; /* Slightly bolder text */
+  background-color: #fff5f0; 
+  color: #073a4b; 
+  font-weight: 500; 
 }
 
 /* Remove the generic indicator that applies to both fields */
@@ -244,7 +243,7 @@
 .react-datepicker-wrapper:nth-child(2):has(input:focus)::before {
   content: '';
   position: absolute;
-  right: -5px; /* Position on the right instead of left */
+  right: -5px; 
   top: 50%;
   transform: translateY(-50%);
   width: 4px;
@@ -253,36 +252,31 @@
   border-radius: 2px;
 }
 
-/* Add more space for top-positioned date pickers */
 .react-datepicker-popper[data-placement^='top'] {
   margin-bottom: 10px !important;
 }
 
-/* Ensure the date picker is fully visible when positioned at top */
 .react-datepicker__triangle {
   display: none !important;
 }
 
-/* Highlight the currently selected day more clearly */
 .react-datepicker__day--selected {
   background-color: #f78c6a !important;
   border-radius: 50% !important;
   font-weight: bold !important;
 }
 
-/* Adjust hover effect on days */
 .react-datepicker__day:hover {
   background-color: rgba(247, 140, 106, 0.2) !important;
   border-radius: 50% !important;
 }
 
-/* Give selected date picker different background color */
 .react-datepicker-wrapper:nth-child(1):has(input:focus) input {
-  background-color: #fff0eb; /* Light peach for start date */
+  background-color: #fff0eb; 
 }
 
 .react-datepicker-wrapper:nth-child(2):has(input:focus) input {
-  background-color: #ebfaff; /* Light blue for end date */
+  background-color: #ebfaff; 
 }
 
 /* Make the active state more obvious */

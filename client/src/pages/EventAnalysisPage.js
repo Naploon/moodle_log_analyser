@@ -3,15 +3,16 @@ import Navbar from '../components/Navbar';
 import { useCsvData } from '../context/CsvDataContext';
 import { Line, Bar } from 'react-chartjs-2';
 import ChartWithMenu from '../components/ChartWithMenu';
+import TableMenu from '../components/TableMenu';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import './SharedStyles.css';
-import './UserPage.css'; // Import styles for the search bar
+import './UserPage.css';
+import './EventAnalysisPage.css';
 import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 
-// Register Chart.js and white-background plugin
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 Chart.register({
   id: 'whiteBackground',
@@ -24,7 +25,6 @@ Chart.register({
   }
 });
 
-// Extend dayjs with plugins
 dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
@@ -45,6 +45,7 @@ function EventAnalysisPage() {
   const [bottomUsersForEventData, setBottomUsersForEventData] = useState({});
   const [usersNotInteractingWithEvent, setUsersNotInteractingWithEvent] = useState(0);
   const [eventActivityIndex, setEventActivityIndex] = useState(0);
+  const [zeroInteractionUsersData, setZeroInteractionUsersData] = useState([]);
 
   useEffect(() => {
     if (csvData.originalData && csvData.originalData.length > 0) {
@@ -55,7 +56,6 @@ function EventAnalysisPage() {
       ));
       setFilteredEvents(events);
 
-      // Load the last selected event from localStorage
       const lastSelectedEvent = localStorage.getItem('lastSelectedEvent');
       if (lastSelectedEvent && events.includes(lastSelectedEvent)) {
         handleEventSelect(lastSelectedEvent);
@@ -92,21 +92,32 @@ function EventAnalysisPage() {
       setAvgEntriesPerUserForEvent(0);
     }
 
-    // Get all unique users in the dataset
-    const allUniqueUsersInDataset = Array.from(new Set(csvData.originalData.map(row => row['Kasutaja täisnimi']).filter(Boolean)));
-    const totalUniqueUserCount = allUniqueUsersInDataset.length;
-    
-    // Calculate users not interacting with the event
+    const allUniqueUsersInDataset = new Set();
+    const latestUserTimestamps = {};
+    csvData.originalData.forEach(row => {
+      const user = row['Kasutaja täisnimi'];
+      const timestampStr = row['Aeg'];
+      if (user && timestampStr) {
+        allUniqueUsersInDataset.add(user);
+        const currentTimestamp = dayjs(timestampStr, 'D/M/YY, HH:mm:ss');
+        if (currentTimestamp.isValid()) {
+          if (!latestUserTimestamps[user] || currentTimestamp.isAfter(latestUserTimestamps[user])) {
+            latestUserTimestamps[user] = currentTimestamp;
+          }
+        }
+      }
+    });
+    const allUniqueUsersArray = Array.from(allUniqueUsersInDataset);
+    const totalUniqueUserCount = allUniqueUsersArray.length;
+
     setUsersNotInteractingWithEvent(totalUniqueUserCount - distinctUserCountForEvent);
 
-    // Calculate Activity Index
     if (totalUniqueUserCount > 0) {
       setEventActivityIndex((distinctUserCountForEvent / totalUniqueUserCount) * 100);
     } else {
       setEventActivityIndex(0);
     }
 
-    // Prepare data for event activity by time of day
     const activityByHour = {};
     eventEntries.forEach(row => {
       const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
@@ -130,7 +141,6 @@ function EventAnalysisPage() {
       ],
     });
 
-    // Prepare data for event activity by day of the week
     const dayOfWeekCounts = Array(7).fill(0);
     eventEntries.forEach(row => {
       const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
@@ -150,41 +160,31 @@ function EventAnalysisPage() {
       ],
     });
 
-    // Prepare data for the event-specific activity and distinct users over timeframe chart
     const timeframeCounts = {};
     const distinctUsersPerDayForEvent = {};
     
-    // First determine the date range to display
     let startDateObj, endDateObj;
     
-    // Use the timeframe from context if available
     if (timeframe.startDate && timeframe.endDate) {
-      // Both start and end dates are specified in the timeframe
       startDateObj = dayjs(timeframe.startDate);
       endDateObj = dayjs(timeframe.endDate);
     } else {
-      // Find the first and last activity dates for this event
       const eventEntryDates = eventEntries.map(entry => 
         dayjs(entry['Aeg'], 'D/M/YY, HH:mm:ss')
       ).filter(date => date.isValid());
       
-      // Sort dates chronologically
       eventEntryDates.sort((a, b) => a - b);
       
       if (eventEntryDates.length > 0) {
-        // If timeframe.startDate is set, use it; otherwise use first entry date
         startDateObj = timeframe.startDate ? dayjs(timeframe.startDate) : eventEntryDates[0];
         
-        // If timeframe.endDate is set, use it; otherwise use last entry date
         endDateObj = timeframe.endDate ? dayjs(timeframe.endDate) : eventEntryDates[eventEntryDates.length - 1];
       } else {
-        // Fallback if no valid dates (rare case)
         startDateObj = dayjs().subtract(30, 'days');
         endDateObj = dayjs();
       }
     }
 
-    // Initialize all days in the range with zero counts
     let currentDate = startDateObj;
     while (currentDate.isSameOrBefore(endDateObj, 'day')) {
       const dateString = currentDate.format('YYYY-MM-DD');
@@ -193,16 +193,13 @@ function EventAnalysisPage() {
       currentDate = currentDate.add(1, 'day');
     }
 
-    // Now populate the actual data
     eventEntries.forEach(row => {
       const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
       const user = row['Kasutaja täisnimi'];
       if (date.isValid()) {
         const dateString = date.format('YYYY-MM-DD');
         
-        // Only count if the date is within our display range
         if (date.isSameOrAfter(startDateObj, 'day') && date.isSameOrBefore(endDateObj, 'day')) {
-          // Count total event occurrences
           timeframeCounts[dateString]++;
 
           if (user) {
@@ -242,7 +239,6 @@ function EventAnalysisPage() {
       ],
     });
 
-    // Calculate user activity for the selected event (among those who interacted)
     const userActivityForEvent = {};
     eventEntries.forEach(row => {
       const user = row['Kasutaja täisnimi'];
@@ -251,7 +247,6 @@ function EventAnalysisPage() {
       }
     });
 
-    // Top N users for this event (from interacting users)
     const sortedInteractingUsersByEventActivity = Object.entries(userActivityForEvent)
       .sort(([, countA], [, countB]) => countB - countA);
 
@@ -263,36 +258,20 @@ function EventAnalysisPage() {
         {
           label: `Top ${topN} Users for ${event}`,
           data: topUsers.map(([, count]) => count),
-          backgroundColor: '#4caf50', // Green for top users
+          backgroundColor: '#4caf50',
         },
       ],
     });
 
-    // Bottom N users for this event (including users with zero activity for this event)
-    const allUsersWithEventActivity = allUniqueUsersInDataset.map(user => ({
-      name: user,
-      count: userActivityForEvent[user] || 0, // Get count if exists, else 0
-    }));
+    const zeroInteractionUsers = allUniqueUsersArray
+      .filter(user => !usersWhoInteractedWithEvent.has(user))
+      .map(user => ({
+        name: user,
+        lastTimestamp: latestUserTimestamps[user] ? latestUserTimestamps[user].format('D/M/YY, HH:mm:ss') : 'N/A'
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
 
-    // Sort all users by their activity for this event (ascending), then by name
-    const sortedAllUsersByEventActivityAsc = allUsersWithEventActivity.sort((a, b) => {
-      if (a.count !== b.count) {
-        return a.count - b.count; // Sort by count ascending
-      }
-      return a.name.localeCompare(b.name); // Then by name ascending for tie-breaking
-    });
-    
-    const bottomUsers = sortedAllUsersByEventActivityAsc.slice(0, topN);
-    setBottomUsersForEventData({
-      labels: bottomUsers.map(user => user.name),
-      datasets: [
-        {
-          label: `Bottom ${topN} Users for ${event} (Incl. Zero)`,
-          data: bottomUsers.map(user => user.count),
-          backgroundColor: '#f44336', // Red for bottom users
-        },
-      ],
-    });
+    setZeroInteractionUsersData(zeroInteractionUsers);
   };
 
   const filteredEventContexts = filteredEvents.filter(event =>
@@ -353,7 +332,6 @@ function EventAnalysisPage() {
               </div>
             </div>
             
-            {/* Row for Time of Day and Day of Week charts - RENDERED FIRST */}
             <div className="chart-row">
               {eventTimeOfDayData.labels && eventTimeOfDayData.labels.length > 0 && (
                 <ChartWithMenu
@@ -373,9 +351,8 @@ function EventAnalysisPage() {
               )}
             </div>
 
-            {/* Activity and Distinct Users Over Time chart - RENDERED SECOND and WRAPPED for full width */}
             {eventTimeframeData.labels && eventTimeframeData.labels.length > 0 && (
-              <div className="timeframe-chart-wrapper"> {/* ADDED WRAPPER DIV */}
+              <div className="timeframe-chart-wrapper">
                 <ChartWithMenu
                   ChartComponent={Line} 
                   data={eventTimeframeData}
@@ -402,7 +379,6 @@ function EventAnalysisPage() {
               </div>
             )}
 
-            {/* Row for Top and Bottom Users for the event */}
             <div className="chart-row">
               {topUsersForEventData.labels && topUsersForEventData.labels.length > 0 && (
                 <ChartWithMenu
@@ -413,19 +389,36 @@ function EventAnalysisPage() {
                   options={{ indexAxis: 'y', scales: { x: { beginAtZero: true } } }}
                 />
               )}
-              {bottomUsersForEventData.labels && bottomUsersForEventData.labels.length > 0 && (
-                <ChartWithMenu
-                  ChartComponent={Bar}
-                  data={bottomUsersForEventData}
-                  filename={`${selectedEvent.replace(/[\W_]+/g,"-")}-bottom-users`}
-                  title={`Bottom Users for "${selectedEvent}"`}
-                  options={{ indexAxis: 'y', scales: { x: { beginAtZero: true } } }}
-                />
+              {zeroInteractionUsersData.length > 0 && (
+                <div className="metric-box unified-box zero-interaction-users-box">
+                  <TableMenu 
+                    tableData={zeroInteractionUsersData} 
+                    filenameBase={selectedEvent}
+                  />
+                  <div className="metric-label">Users with 0 Interactions for "{selectedEvent}"</div>
+                  <div className="user-table-container">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>User Name</th>
+                          <th>Last Activity Timestamp</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {zeroInteractionUsersData.map((user, index) => (
+                          <tr key={index}>
+                            <td>{user.name}</td>
+                            <td>{user.lastTimestamp}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
             </div>
           </>
         )}
-        {/* Add more content here as needed */}
       </div>
     </div>
   );

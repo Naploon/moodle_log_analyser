@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Line, Bar } from 'react-chartjs-2';
 import ChartWithMenu from '../components/ChartWithMenu';
@@ -12,14 +12,8 @@ import { filterDataByTimeframe } from '../processors/csvProcessor';
 function Dashboard() {
   const navigate = useNavigate();
   const { isCsvUploaded } = useCsv();
-  const { csvData, timeframe, filteredData } = useCsvData();
+  const { csvData, timeframe } = useCsvData();
 
-  const [chartData, setChartData] = useState({});
-  const [dayOfWeekData, setDayOfWeekData] = useState({});
-  const [topUsersData, setTopUsersData] = useState({});
-  const [bottomUsersData, setBottomUsersData] = useState({});
-  const [timeframeData, setTimeframeData] = useState({});
-  const [resourceContextData, setResourceContextData] = useState([]);
   const COMPONENT_COLORS = [
     '#FF6384', '#36A2EB', '#FFCE56',
     '#4BC0C0', '#9966FF', '#FF9F40'
@@ -27,252 +21,228 @@ function Dashboard() {
 
   useEffect(() => {
     if (!isCsvUploaded) {
-      navigate('/'); // Redirect to landing page if no CSV is uploaded
+      navigate('/'); 
     }
   }, [isCsvUploaded, navigate]);
 
-  useEffect(() => {
-    if (filteredData) {
-      // Update your chart data here based on filteredData
-      // Calculate activity by day of the week
-      const dayOfWeekCounts = Array(7).fill(0); // Initialize array for each day of the week
+  
+  const chartData = useMemo(() => {
+    if (!csvData.processedData || Object.keys(csvData.processedData).length === 0) return {};
+    const labels = Object.keys(csvData.processedData).sort();
+    const data = labels.map(label => csvData.processedData[label]);
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Events per Hour',
+          data,
+          fill: false,
+          backgroundColor: '#f04770',
+          borderColor: '#f78c6a',
+        },
+      ],
+    };
+  }, [csvData.processedData]);
 
-      filteredData.forEach(row => {
-        const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
-        if (date.isValid()) {
-          const dayOfWeek = date.day(); // Get day of the week (0 = Sunday, 6 = Saturday)
-          dayOfWeekCounts[dayOfWeek]++;
+  const dayOfWeekData = useMemo(() => {
+    if (!csvData.originalData || csvData.originalData.length === 0) return {};
+    const dayOfWeekCounts = Array(7).fill(0); 
+
+    csvData.originalData.forEach(row => {
+      const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
+      if (date.isValid()) {
+        const dayOfWeek = date.day(); 
+        dayOfWeekCounts[dayOfWeek]++;
+      }
+    });
+
+    return {
+      labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      datasets: [
+        {
+          label: 'Events per Day of the Week',
+          data: dayOfWeekCounts,
+          backgroundColor: '#4caf50',
+        },
+      ],
+    };
+  }, [csvData.originalData]);
+
+  const { topUsersData, bottomUsersData } = useMemo(() => {
+    if (!csvData.originalData || csvData.originalData.length === 0) return { topUsersData: {}, bottomUsersData: {} };
+
+    const userActivity = {};
+    csvData.originalData.forEach(row => {
+      const user = row['Kasutaja täisnimi'];
+      if (!userActivity[user]) {
+        userActivity[user] = 0;
+      }
+      userActivity[user]++;
+    });
+
+    
+    const sortedUsers = Object.entries(userActivity)
+        .filter(([user]) => user && user !== 'undefined' && user !== 'null')
+        .sort((a, b) => b[1] - a[1]);
+
+    
+    const topUsers = sortedUsers.slice(0, 10);
+    const topData = {
+      labels: topUsers.map(([user]) => user),
+      datasets: [
+        {
+          label: 'Top 10 Users by Activity',
+          data: topUsers.map(([, count]) => count),
+          backgroundColor: '#4caf50',
+        },
+      ],
+    };
+
+    
+    const bottomUsers = sortedUsers.length <= 10 ? sortedUsers : sortedUsers.slice(-10);
+    const bottomData = {
+      labels: bottomUsers.map(([user]) => user),
+      datasets: [
+        {
+          label: 'Bottom 10 Users by Activity',
+          data: bottomUsers.map(([, count]) => count),
+          backgroundColor: '#f44336',
+        },
+      ],
+    };
+
+    return { topUsersData: topData, bottomUsersData: bottomData };
+  }, [csvData.originalData]);
+
+  const timeframeData = useMemo(() => {
+    if (!csvData.originalData || csvData.originalData.length === 0) return {};
+
+    const timeframeCounts = {};
+    const distinctUsersPerDayCounts = {};
+
+    
+    let startDateObj, endDateObj;
+
+   
+    if (timeframe.startDate && timeframe.endDate) {
+      
+      startDateObj = dayjs(timeframe.startDate);
+      endDateObj = dayjs(timeframe.endDate);
+    } else {
+     
+      const allEntryDates = csvData.originalData
+        .map(row => dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss'))
+        .filter(date => date.isValid());
+      
+      
+      allEntryDates.sort((a, b) => a - b);
+      
+      if (allEntryDates.length > 0) {
+        
+        startDateObj = timeframe.startDate ? dayjs(timeframe.startDate) : allEntryDates[0];
+        
+        
+        endDateObj = timeframe.endDate ? dayjs(timeframe.endDate) : allEntryDates[allEntryDates.length - 1];
+      } else {
+        
+        startDateObj = dayjs().subtract(30, 'days');
+        endDateObj = dayjs();
+      }
+    }
+
+    
+    let currentDate = startDateObj;
+    while (currentDate.isSameOrBefore(endDateObj, 'day')) {
+      const dateString = currentDate.format('YYYY-MM-DD');
+      timeframeCounts[dateString] = 0;
+      distinctUsersPerDayCounts[dateString] = new Set();
+      currentDate = currentDate.add(1, 'day');
+    }
+
+    
+    csvData.originalData.forEach(row => {
+      const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
+      const user = row['Kasutaja täisnimi'];
+
+      if (date.isValid()) {
+        const dateString = date.format('YYYY-MM-DD');
+        
+        
+        if (date.isSameOrAfter(startDateObj, 'day') && date.isSameOrBefore(endDateObj, 'day')) {
+          timeframeCounts[dateString]++;
+
+          if (user) {
+            distinctUsersPerDayCounts[dateString].add(user);
+          }
+        }
+      }
+    });
+
+    const timeframeLabels = Object.keys(timeframeCounts).sort();
+    const eventDataPoints = timeframeLabels.map(label => timeframeCounts[label]);
+    const distinctUsersDataPoints = timeframeLabels.map(label => 
+      distinctUsersPerDayCounts[label].size
+    );
+
+    return {
+      labels: timeframeLabels,
+      datasets: [
+        {
+          label: 'Events Over Timeframe',
+          data: eventDataPoints,
+          fill: false,
+          backgroundColor: '#4BC0C0',
+          borderColor: '#4BC0C0',     
+          yAxisID: 'yEvents',
+          type: 'line',
+        },
+        {
+          label: 'Distinct Users Over Timeframe',
+          data: distinctUsersDataPoints,
+          fill: false,
+          backgroundColor: '#FF9F40',
+          borderColor: '#FF9F40',
+          yAxisID: 'yUsers',
+          type: 'bar',
+        },
+      ],
+    };
+  }, [csvData.originalData, timeframe]);
+
+  const resourceContextData = useMemo(() => {
+    if (!csvData.originalData || csvData.originalData.length === 0) return [];
+
+    const components = Array.from(
+      new Set(csvData.originalData.map(r => r['Komponent']))
+    )
+    
+    .filter(component => component !== 'Süsteem');
+
+    const resourceData = components.map((comp, idx) => {
+      // tally up contexts
+      const counts = {};
+      csvData.originalData.forEach(row => {
+        if (row['Komponent'] === comp) {
+          const ctx = row['Sündmuse kontekst'];
+          counts[ctx] = (counts[ctx] || 0) + 1;
         }
       });
+      const labels = Object.keys(counts);
+      const data   = labels.map(l => counts[l]);
 
-      setDayOfWeekData({
-        labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-        datasets: [
-          {
-            label: 'Events per Day of the Week',
-            data: dayOfWeekCounts,
-            backgroundColor: '#4caf50',
-          },
-        ],
-      });
-
-      // Other calculations using filteredData...
-    }
-  }, [filteredData]);
-
-  useEffect(() => {
-    if (csvData.processedData && Object.keys(csvData.processedData).length > 0) {
-      const labels = Object.keys(csvData.processedData).sort(); // Sort hours for proper order
-      const data = labels.map(label => csvData.processedData[label]);
-
-      setChartData({
+      return {
         labels,
         datasets: [
           {
-            label: 'Events per Hour',
+            label: `${comp} Context Distribution`,
             data,
-            fill: false,
-            backgroundColor: '#f04770',
-            borderColor: '#f78c6a',
-          },
-        ],
-      });
-    }
-
-    // Calculate activity by day of the week
-    if (csvData.originalData && csvData.originalData.length > 0) {
-      const dayOfWeekCounts = Array(7).fill(0); // Initialize array for each day of the week
-
-      csvData.originalData.forEach(row => {
-        const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
-        if (date.isValid()) {
-          const dayOfWeek = date.day(); // Get day of the week (0 = Sunday, 6 = Saturday)
-          dayOfWeekCounts[dayOfWeek]++;
-        }
-      });
-
-      setDayOfWeekData({
-        labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-        datasets: [
-          {
-            label: 'Events per Day of the Week',
-            data: dayOfWeekCounts,
-            backgroundColor: '#4caf50',
-          },
-        ],
-      });
-    }
-
-    // Calculate user activity from the original CSV data
-    if (csvData.originalData && csvData.originalData.length > 0) {
-      const userActivity = {};
-      csvData.originalData.forEach(row => {
-        const user = row['Kasutaja täisnimi'];
-        if (!userActivity[user]) {
-          userActivity[user] = 0;
-        }
-        userActivity[user]++;
-      });
-
-      // Sort users by activity
-      const sortedUsers = Object.entries(userActivity).sort((a, b) => b[1] - a[1]);
-
-      // Top 10 users
-      const topUsers = sortedUsers.slice(0, 10);
-      setTopUsersData({
-        labels: topUsers.map(([user]) => user),
-        datasets: [
-          {
-            label: 'Top 10 Users by Activity',
-            data: topUsers.map(([, count]) => count),
-            backgroundColor: '#4caf50',
-          },
-        ],
-      });
-
-      // Bottom 10 users
-      const bottomUsers = sortedUsers.slice(-10);
-      setBottomUsersData({
-        labels: bottomUsers.map(([user]) => user),
-        datasets: [
-          {
-            label: 'Bottom 10 Users by Activity',
-            data: bottomUsers.map(([, count]) => count),
-            backgroundColor: '#f44336',
-          },
-        ],
-      });
-
-      // Calculate activity and distinct users over the entire timeframe by day
-      const timeframeCounts = {};
-      const distinctUsersPerDayCounts = {};
-
-      // First determine the date range to display
-      let startDateObj, endDateObj;
-
-      // Use the timeframe from context if available
-      if (timeframe.startDate && timeframe.endDate) {
-        // Both start and end dates are specified in the timeframe
-        startDateObj = dayjs(timeframe.startDate);
-        endDateObj = dayjs(timeframe.endDate);
-      } else {
-        // Find the first and last activity dates in the data
-        const allEntryDates = csvData.originalData
-          .map(row => dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss'))
-          .filter(date => date.isValid());
-        
-        // Sort dates chronologically
-        allEntryDates.sort((a, b) => a - b);
-        
-        if (allEntryDates.length > 0) {
-          // If timeframe.startDate is set, use it; otherwise use first entry date
-          startDateObj = timeframe.startDate ? dayjs(timeframe.startDate) : allEntryDates[0];
-          
-          // If timeframe.endDate is set, use it; otherwise use last entry date
-          endDateObj = timeframe.endDate ? dayjs(timeframe.endDate) : allEntryDates[allEntryDates.length - 1];
-        } else {
-          // Fallback if no valid dates (rare case)
-          startDateObj = dayjs().subtract(30, 'days');
-          endDateObj = dayjs();
-        }
-      }
-
-      // Initialize all days in the range with zero counts
-      let currentDate = startDateObj;
-      while (currentDate.isSameOrBefore(endDateObj, 'day')) {
-        const dateString = currentDate.format('YYYY-MM-DD');
-        timeframeCounts[dateString] = 0;
-        distinctUsersPerDayCounts[dateString] = new Set();
-        currentDate = currentDate.add(1, 'day');
-      }
-
-      // Now populate the actual data
-      csvData.originalData.forEach(row => {
-        const date = dayjs(row['Aeg'], 'D/M/YY, HH:mm:ss');
-        const user = row['Kasutaja täisnimi'];
-
-        if (date.isValid()) {
-          const dateString = date.format('YYYY-MM-DD');
-          
-          // Only count if the date is within our display range
-          if (date.isSameOrAfter(startDateObj, 'day') && date.isSameOrBefore(endDateObj, 'day')) {
-            // Count total events (will add to the initialized zero)
-            timeframeCounts[dateString]++;
-
-            // Add user to the set of distinct users for this day
-            if (user) {
-              distinctUsersPerDayCounts[dateString].add(user);
-            }
+            backgroundColor: COMPONENT_COLORS[idx % COMPONENT_COLORS.length],
           }
-        }
-      });
+        ]
+      };
+    });
 
-      // The rest remains the same - using the complete set of days as labels
-      const timeframeLabels = Object.keys(timeframeCounts).sort();
-      const eventDataPoints = timeframeLabels.map(label => timeframeCounts[label]);
-      const distinctUsersDataPoints = timeframeLabels.map(label => 
-        distinctUsersPerDayCounts[label].size
-      );
-
-      setTimeframeData({
-        labels: timeframeLabels,
-        datasets: [
-          {
-            label: 'Events Over Timeframe',
-            data: eventDataPoints,
-            fill: false,
-            backgroundColor: '#4BC0C0', // Teal
-            borderColor: '#4BC0C0',     // Teal
-            yAxisID: 'yEvents',
-            type: 'line',
-          },
-          {
-            label: 'Distinct Users Over Timeframe',
-            data: distinctUsersDataPoints,
-            fill: false,
-            backgroundColor: '#FF9F40', // Orange
-            borderColor: '#FF9F40',     // Orange
-            yAxisID: 'yUsers',
-            type: 'bar',
-          },
-        ],
-      });
-    }
-
-    // 3) build "Sündmuse kontekst" distribution for EVERY Komponent
-    if (csvData.originalData && csvData.originalData.length > 0) {
-      const components = Array.from(
-        new Set(csvData.originalData.map(r => r['Komponent']))
-      )
-      // exclude the "Süsteem" component entirely
-      .filter(component => component !== 'Süsteem');
-
-      const resourceData = components.map((comp, idx) => {
-        // tally up contexts
-        const counts = {};
-        csvData.originalData.forEach(row => {
-          if (row['Komponent'] === comp) {
-            const ctx = row['Sündmuse kontekst'];
-            counts[ctx] = (counts[ctx] || 0) + 1;
-          }
-        });
-        const labels = Object.keys(counts);
-        const data   = labels.map(l => counts[l]);
-
-        return {
-          labels,
-          datasets: [
-            {
-              label: `${comp} Context Distribution`,
-              data,
-              backgroundColor: COMPONENT_COLORS[idx % COMPONENT_COLORS.length],
-            }
-          ]
-        };
-      });
-
-      setResourceContextData(resourceData);
-    }
+    return resourceData;
   }, [csvData.originalData]);
 
   return (
@@ -368,25 +338,38 @@ function Dashboard() {
             />
           )}
         </div>
-        {/* 4) render one Bar for each component */}
+        {/* 4) render one Bar for each component - Max 2 per row */}
         {resourceContextData.length > 0 && (
           <>
             <h2 className="page-title">Context Distribution by Component</h2>
-            <div className="chart-row">
-              {resourceContextData.map((cfg, i) => (
-                <ChartWithMenu
-                  key={i}
-                  ChartComponent={Bar}
-                  data={cfg}
-                  filename={`resource-${cfg.datasets[0].label}`}
-                  title={cfg.datasets[0].label}
-                  options={{
-                    indexAxis: 'y',
-                    scales: { x: { beginAtZero: true } }
-                  }}
-                />
-              ))}
-            </div>
+            {/* Map data into chunks of 2 for separate rows */}
+            {resourceContextData.reduce((rows, chartConfig, index) => {
+              // Start a new row every 2 charts
+              if (index % 2 === 0) {
+                rows.push([]);
+              }
+              // Add the current chart config to the latest row
+              rows[rows.length - 1].push(chartConfig);
+              return rows;
+            }, []).map((rowItems, rowIndex) => (
+              // Render a chart-row div for each row chunk
+              <div key={rowIndex} className="chart-row">
+                {rowItems.map((cfg, itemIndex) => (
+                  <ChartWithMenu
+                    key={`${rowIndex}-${itemIndex}`}
+                    ChartComponent={Bar}
+                    data={cfg}
+                    filename={`resource-${cfg.datasets[0].label}`}
+                    title={cfg.datasets[0].label}
+                    options={{
+                      indexAxis: 'y',
+                      scales: { x: { beginAtZero: true } },
+                      maintainAspectRatio: false
+                    }}
+                  />
+                ))}
+              </div>
+            ))}
           </>
         )}
       </div>
