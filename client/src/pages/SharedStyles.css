@@ -84,9 +84,10 @@
 .chart-row > .chart-container {
   flex-grow: 1;
   flex-basis: 0; 
-
+  width: auto;
+  max-width: none;
+  margin: 0;
 }
-
 
 .chart-row > .zero-interaction-users-box {
   flex-grow: 1;
@@ -94,7 +95,6 @@
   
   box-sizing: border-box;
 }
-
 
 .zero-interaction-users-box {
   position: relative;
@@ -114,7 +114,6 @@
   cursor: pointer;
   z-index: 10;
 }
-
 
 .timeframe-chart-wrapper {
   width: 100%; 

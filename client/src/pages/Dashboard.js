@@ -364,7 +364,6 @@ function Dashboard() {
                     options={{
                       indexAxis: 'y',
                       scales: { x: { beginAtZero: true } },
-                      maintainAspectRatio: false
                     }}
                   />
                 ))}
