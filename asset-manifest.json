@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/moodle_log_analyser/static/css/main.75f08783.css",
+    "main.js": "/moodle_log_analyser/static/js/main.141a07c0.js",
+    "static/js/488.b51d605a.chunk.js": "/moodle_log_analyser/static/js/488.b51d605a.chunk.js",
+    "index.html": "/moodle_log_analyser/index.html",
+    "main.75f08783.css.map": "/moodle_log_analyser/static/css/main.75f08783.css.map",
+    "main.141a07c0.js.map": "/moodle_log_analyser/static/js/main.141a07c0.js.map",
+    "488.b51d605a.chunk.js.map": "/moodle_log_analyser/static/js/488.b51d605a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.75f08783.css",
+    "static/js/main.141a07c0.js"
+  ]
+}
