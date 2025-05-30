@@ -350,7 +350,7 @@ function UserPage() {
           />
           {isDropdownVisible && (
             <div className="user-dropdown">
-              {filteredUsers.map(user => (
+              {filteredUsers.sort().map(user => (
                 <div
                   key={user}
                   className={`user-option ${user === selectedUser ? 'selected' : ''}`}
